@@ -1,0 +1,54 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Customer {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  name      String?
+  phone     String?
+  bookings  Booking[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Booking {
+  id                   String        @id @default(cuid())
+  customer             Customer?     @relation(fields: [customerId], references: [id])
+  customerId           String?
+
+  collectionAddress    String
+  collectionPostcode   String
+  deliveryAddress      String
+  deliveryPostcode     String
+  stops                Json?
+
+  collectionStairs     Int           @default(0)
+  deliveryStairs       Int           @default(0)
+  moveDate             DateTime
+  vanSize              String
+  helpers              Int           @default(0)
+
+  price                Float
+  stripePaymentId      String?
+  stripeSessionId      String?
+  status               BookingStatus @default(PENDING)
+
+  contactEmail         String?
+  contactName          String?
+  contactPhone         String?
+
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}

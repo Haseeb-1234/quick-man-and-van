@@ -1,0 +1,19 @@
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: "FAQ",
+  description: "Frequently asked questions about man and van bookings with Quick Man and Van.",
+}
+
+export default function FaqPage() {
+  return (
+    <article className="mx-auto max-w-3xl px-4 py-16 sm:px-6 sm:py-24">
+      <h1 className="text-3xl font-bold tracking-tight text-zinc-900">FAQ</h1>
+      <p className="mt-4 text-zinc-600">
+        Common questions about pricing, what we move, coverage, and cancellations will be expanded here. For now,
+        use <a href="/contact" className="font-medium text-[#3fb6ee] hover:underline">Contact</a> or WhatsApp for
+        specific questions.
+      </p>
+    </article>
+  )
+}
