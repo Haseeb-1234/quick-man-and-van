@@ -93,6 +93,10 @@ function formatLabel(parts: Array<string | undefined>): string {
     .join(", ")
 }
 
+function looksLikeUkPostcode(value: string | undefined): boolean {
+  return Boolean(value?.trim().match(/^[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}$/i))
+}
+
 function mapPhotonFeature(feature: PhotonFeature): AddressSuggestion | null {
   const props = feature.properties ?? {}
   const coords = feature.geometry?.coordinates
@@ -103,8 +107,11 @@ function mapPhotonFeature(feature: PhotonFeature): AddressSuggestion | null {
   if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null
 
   const city = props.city || props.town || props.village || ""
-  const street = [props.housenumber, props.street || props.name].filter(Boolean).join(" ").trim()
-  const address = formatLabel([props.name, props.street, city, props.postcode]) || formatLabel([street, city, props.postcode])
+  const postcode = props.postcode || (looksLikeUkPostcode(props.name) ? props.name?.toUpperCase().replace(/\s+/, " ") : "") || ""
+  const nameIsPostcode = looksLikeUkPostcode(props.name)
+  const streetName = props.street || (nameIsPostcode ? "" : props.name) || ""
+  const street = [props.housenumber, streetName].filter(Boolean).join(" ").trim()
+  const address = formatLabel([nameIsPostcode ? undefined : props.name, props.street, city, postcode]) || formatLabel([street, city, postcode])
 
   if (!address) return null
 
@@ -112,7 +119,7 @@ function mapPhotonFeature(feature: PhotonFeature): AddressSuggestion | null {
     addr: address,
     street,
     city,
-    postcode: props.postcode || "",
+    postcode,
     lat,
     long: lon,
     stairs: 0,

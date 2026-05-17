@@ -44,7 +44,7 @@ function ukToIso(value: string): string {
 }
 
 function hasSelectedAddress(leg: AddressLeg): boolean {
-  return Boolean(leg.addr.trim() && leg.postcode.trim() && leg.lat != null && leg.long != null)
+  return Boolean(leg.addr.trim() && leg.lat != null && leg.long != null)
 }
 
 function numberParam(value: string | null): number | null {
@@ -99,7 +99,7 @@ export function MoveWizard({ initialStep = 1 }: MoveWizardProps) {
   function setWizardStep(nextStep: number) {
     setStep(nextStep)
     if (typeof window === "undefined") return
-    const path = nextStep === 1 ? "/move" : `/move/${nextStep - 1}`
+    const path = `/move/${nextStep}`
     window.history.pushState({}, "", path)
   }
 
@@ -386,6 +386,19 @@ export function MoveWizard({ initialStep = 1 }: MoveWizardProps) {
             </div>
             <ButtonLink href="/move" variant="outline">
               Start another quote
+            </ButtonLink>
+          </div>
+        ) : null}
+
+        {step === 4 && !quoteData ? (
+          <div className="rounded border border-amber-200 bg-amber-50 p-5 text-amber-900">
+            <h2 className="text-xl font-bold">No quote results loaded</h2>
+            <p className="mt-2 text-sm">
+              Quote results are created after completing the previous steps. Start from the route page and submit your details to
+              generate live quotes.
+            </p>
+            <ButtonLink href="/move/1" variant="outline" className="mt-4">
+              Start quote
             </ButtonLink>
           </div>
         ) : null}

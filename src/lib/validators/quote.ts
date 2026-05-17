@@ -7,7 +7,7 @@ export const addressLegSchema = z.object({
   street: z.string().max(300).default(""),
   city: z.string().max(120).default(""),
   stairs: z.number().int().min(0).max(9),
-  postcode: z.string().min(4).max(14),
+  postcode: z.string().max(14),
   lat: z.number().nullable(),
   long: z.number().nullable(),
 })

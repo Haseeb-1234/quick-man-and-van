@@ -19,11 +19,11 @@ function WizardFallback() {
 export default async function MoveStagePage({ params }: { params: Promise<{ stage: string }> }) {
   const { stage } = await params
   const numericStage = Number(stage)
-  if (!Number.isInteger(numericStage) || numericStage < 1 || numericStage > 3) notFound()
+  if (!Number.isInteger(numericStage) || numericStage < 1 || numericStage > 4) notFound()
 
   return (
     <Suspense fallback={<WizardFallback />}>
-      <MoveWizard initialStep={numericStage + 1} />
+      <MoveWizard initialStep={numericStage} />
     </Suspense>
   )
 }
