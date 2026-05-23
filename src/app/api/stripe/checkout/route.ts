@@ -1,3 +1,4 @@
+import { recomputeBookingPrice } from "@/lib/pricing"
 import { prisma } from "@/lib/prisma"
 import { getStripe } from "@/lib/stripe"
 import { checkoutBodySchema } from "@/lib/validators/quote"
@@ -5,7 +6,14 @@ import { NextResponse } from "next/server"
 
 export async function POST(req: Request) {
   const stripe = getStripe()
-  const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000"
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL ??
+    process.env.NEXTAUTH_URL ??
+    "http://localhost:3000"
+
+  if (process.env.NODE_ENV === "production" && baseUrl.includes("localhost")) {
+    throw new Error("NEXT_PUBLIC_BASE_URL must be set to the production domain before taking payments")
+  }
 
   if (!stripe) {
     return NextResponse.json({ error: "stripe_not_configured" }, { status: 503 })
@@ -31,8 +39,25 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "booking_not_available" }, { status: 400 })
   }
 
+  if (!booking.checkoutToken || booking.checkoutToken !== parsed.data.checkoutToken) {
+    return NextResponse.json({ error: "booking_not_available" }, { status: 403 })
+  }
+
   if (!booking.contactEmail) {
     return NextResponse.json({ error: "missing_contact_email" }, { status: 400 })
+  }
+
+  // Re-validate stored price against current pricing rules before charging
+  if (booking.bookedHours != null && booking.bookedVanType != null) {
+    const recomputed = recomputeBookingPrice(booking)
+    const priceDrift = Math.abs(recomputed - booking.price) / booking.price
+    if (priceDrift > 0.01) {
+      console.error("Price drift at checkout", { stored: booking.price, recomputed, bookingId: booking.id })
+      return NextResponse.json(
+        { error: "Price has changed, please re-request a quote" },
+        { status: 409 },
+      )
+    }
   }
 
   const unitAmount = Math.round(booking.price * 100)
@@ -41,32 +66,46 @@ export async function POST(req: Request) {
   }
 
   try {
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      customer_email: booking.contactEmail,
-      client_reference_id: booking.id,
-      metadata: {
-        bookingId: booking.id,
-      },
-      payment_intent_data: {
-        metadata: { bookingId: booking.id },
-      },
-      line_items: [
-        {
-          quantity: 1,
-          price_data: {
-            currency: "gbp",
-            unit_amount: unitAmount,
-            product_data: {
-              name: "Man and van move",
-              description: `Booking ${booking.id.slice(0, 8)} — ${booking.collectionPostcode} → ${booking.deliveryPostcode}`,
+    if (booking.stripeSessionId) {
+      try {
+        const existing = await stripe.checkout.sessions.retrieve(booking.stripeSessionId)
+        if (existing.status === "open" && existing.url) {
+          return NextResponse.json({ url: existing.url })
+        }
+      } catch (e) {
+        console.error("Failed to retrieve existing Stripe session", { bookingId: booking.id, e })
+      }
+    }
+
+    const session = await stripe.checkout.sessions.create(
+      {
+        mode: "payment",
+        customer_email: booking.contactEmail,
+        client_reference_id: booking.id,
+        metadata: {
+          bookingId: booking.id,
+        },
+        payment_intent_data: {
+          metadata: { bookingId: booking.id },
+        },
+        line_items: [
+          {
+            quantity: 1,
+            price_data: {
+              currency: "gbp",
+              unit_amount: unitAmount,
+              product_data: {
+                name: "Man and van move",
+                description: `Booking ${booking.id.slice(0, 8)} — ${booking.collectionPostcode} → ${booking.deliveryPostcode}`,
+              },
             },
           },
-        },
-      ],
-      success_url: `${baseUrl}/move/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${baseUrl}/move?cancelled=1`,
-    })
+        ],
+        success_url: `${baseUrl}/move/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${baseUrl}/move?cancelled=1`,
+      },
+      { idempotencyKey: booking.id },
+    )
 
     await prisma.booking.update({
       where: { id: booking.id },

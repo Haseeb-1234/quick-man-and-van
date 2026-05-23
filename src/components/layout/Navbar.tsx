@@ -15,10 +15,10 @@ export function Navbar() {
   const [open, setOpen] = useState(false)
 
   return (
-    <header className="sticky top-0 z-50 border-b border-zinc-200/80 bg-white/95 backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-[rgba(255,255,255,0.07)] bg-[#1A2733]/95 backdrop-blur-sm">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-        <Link href="/" className="flex shrink-0 items-center gap-2 font-semibold tracking-tight text-zinc-900">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#3fb6ee] text-sm font-bold text-white">
+        <Link href="/" className="flex shrink-0 items-center gap-2 font-semibold tracking-tight text-[#F59E0B]">
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#F59E0B] text-sm font-bold text-[#0F1923]">
             Q
           </span>
           <span className="hidden min-[380px]:inline">{SITE_NAME}</span>
@@ -29,7 +29,7 @@ export function Navbar() {
             <Link
               key={href}
               href={href}
-              className="rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-[#94A3B8] transition duration-150 hover:bg-[#223040] hover:text-[#F1F5F9]"
             >
               {label}
             </Link>
@@ -41,18 +41,18 @@ export function Navbar() {
             href={WHATSAPP_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm font-medium text-[#3fb6ee] hover:underline"
+            className="text-sm font-semibold text-[#F59E0B] transition duration-150 hover:text-[#FBBF24]"
           >
             WhatsApp
           </a>
-          <ButtonLink href="/move" variant="primary">
+          <ButtonLink href="/move" variant="primary" className="btn-primary">
             Get free quotes
           </ButtonLink>
         </div>
 
         <button
           type="button"
-          className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-200 text-zinc-700 md:hidden"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[rgba(255,255,255,0.07)] text-[#F59E0B] transition duration-150 hover:bg-[#223040] md:hidden"
           aria-expanded={open}
           aria-controls="mobile-nav"
           onClick={() => setOpen((v) => !v)}
@@ -71,13 +71,13 @@ export function Navbar() {
       </div>
 
       {open ? (
-        <div id="mobile-nav" className="border-t border-zinc-200 bg-white px-4 py-4 md:hidden">
+        <div id="mobile-nav" className="border-t border-[rgba(255,255,255,0.07)] bg-[#1A2733] px-4 py-4 md:hidden">
           <nav className="flex flex-col gap-1" aria-label="Mobile">
             {navLinks.map(({ href, label }) => (
               <Link
                 key={href}
                 href={href}
-                className="rounded-lg px-3 py-3 text-base font-medium text-zinc-800 hover:bg-zinc-50"
+                className="rounded-lg px-3 py-3 text-base font-medium text-[#94A3B8] transition duration-150 hover:bg-[#223040] hover:text-[#F1F5F9]"
                 onClick={() => setOpen(false)}
               >
                 {label}
@@ -87,11 +87,11 @@ export function Navbar() {
               href={WHATSAPP_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-lg px-3 py-3 text-base font-medium text-[#3fb6ee]"
+              className="rounded-lg px-3 py-3 text-base font-semibold text-[#F59E0B] transition duration-150 hover:bg-[#223040] hover:text-[#FBBF24]"
             >
               WhatsApp
             </a>
-            <ButtonLink href="/move" className="mt-2 w-full" onClick={() => setOpen(false)}>
+            <ButtonLink href="/move" className="btn-primary mt-2 w-full" onClick={() => setOpen(false)}>
               Get free quotes
             </ButtonLink>
           </nav>

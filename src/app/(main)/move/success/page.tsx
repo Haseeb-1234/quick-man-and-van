@@ -28,11 +28,11 @@ export default async function MoveSuccessPage({ searchParams }: Props) {
 
   return (
     <div className="mx-auto max-w-lg px-4 py-16 text-center sm:px-6 sm:py-24">
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-2xl" aria-hidden>
+      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[rgba(245,158,11,0.12)] text-2xl text-[#F59E0B]" aria-hidden>
         ✓
       </div>
-      <h1 className="mt-6 text-2xl font-bold text-zinc-900">Thank you</h1>
-      <p className="mt-3 text-zinc-600">
+      <h1 className="mt-6 text-2xl font-bold text-[#F1F5F9]">Thank you</h1>
+      <p className="mt-3 text-[#94A3B8]">
         {paymentOk
           ? "Stripe reports a successful payment. You should receive a confirmation email shortly (after the webhook runs in production)."
           : session_id
@@ -45,8 +45,8 @@ export default async function MoveSuccessPage({ searchParams }: Props) {
           New quote
         </ButtonLink>
       </div>
-      <p className="mt-8 text-sm text-zinc-500">
-        Need help? <Link href="/contact" className="font-medium text-[#3fb6ee] hover:underline">Contact</Link>
+      <p className="mt-8 text-sm text-[#94A3B8]">
+        Need help? <Link href="/contact" className="font-medium text-[#F59E0B] transition duration-150 hover:text-[#FBBF24]">Contact</Link>
       </p>
     </div>
   )

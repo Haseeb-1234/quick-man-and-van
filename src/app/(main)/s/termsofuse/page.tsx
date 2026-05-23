@@ -8,8 +8,8 @@ export const metadata: Metadata = {
 export default function TermsPage() {
   return (
     <article className="mx-auto max-w-3xl px-4 py-16 sm:px-6 sm:py-24">
-      <h1 className="text-3xl font-bold tracking-tight text-zinc-900">Terms of use</h1>
-      <p className="mt-4 text-zinc-600">
+      <h1 className="font-display text-3xl font-bold tracking-tight text-[#F1F5F9]">Terms of use</h1>
+      <p className="mt-4 text-[#94A3B8]">
         Full legal terms for using this site and making bookings will be published here. This is a placeholder
         during development.
       </p>

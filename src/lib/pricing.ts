@@ -52,7 +52,7 @@ export function formatDuration(minutes: number): string {
 export function parseMoveDateTime(date: string, time: string): Date {
   const [day, month, year] = date.split("/").map(Number)
   const [hour, minute] = time.split(":").map(Number)
-  return new Date(Date.UTC(year, month - 1, day, hour || 0, minute || 0, 0))
+  return new Date(Date.UTC(year, month - 1, day, hour ?? 0, minute ?? 0, 0))
 }
 
 function calculatePrice(input: QuoteRequest, hourlyRate: number): { price: number; breakdown: PriceBreakdown } {
@@ -113,3 +113,38 @@ export async function computeQuotes(input: QuoteRequest): Promise<{
 }
 
 export const vanLabels = VAN_LABELS
+
+type StoredBookingFields = {
+  bookedHours: number | null
+  bookedVanType: number | null
+  helpers: number
+  collectionStairs: number
+  deliveryStairs: number
+  stops: unknown
+}
+
+/**
+ * Re-derives the minimum possible price from persisted booking fields.
+ * Used at checkout to detect >1% drift from the stored price (e.g. rate changes).
+ * Uses the cheapest applicable provider (lowest hourlyAdjust) for the comparison.
+ */
+export function recomputeBookingPrice(booking: StoredBookingFields): number {
+  const vanType = (booking.bookedVanType ?? 0) as VanType
+  const hours = booking.bookedHours ?? 5
+  const stopsCount = Array.isArray(booking.stops) ? (booking.stops as unknown[]).length : 0
+  const totalStairs = booking.collectionStairs + booking.deliveryStairs
+
+  const applicableProviders = PROVIDERS.filter((p) => p.vanMax >= vanType)
+  const cheapestAdjust = applicableProviders.reduce(
+    (min, p) => Math.min(min, p.hourlyAdjust),
+    applicableProviders[0]?.hourlyAdjust ?? 0,
+  )
+  const hourlyRate = Math.max(20, HOURLY_RATES[vanType] + cheapestAdjust)
+
+  const basePrice = hourlyRate * hours
+  const helperCost = (HELPER_RATES[booking.helpers] ?? 0) * hours
+  const stairCost = totalStairs * STAIR_RATE
+  const stopCost = stopsCount * STOP_RATE
+
+  return Math.round((basePrice + helperCost + stairCost + stopCost) * 100) / 100
+}

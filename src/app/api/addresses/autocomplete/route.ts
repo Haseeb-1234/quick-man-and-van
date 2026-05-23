@@ -1,4 +1,4 @@
-import { autocompleteAddress } from "@/lib/geo-services"
+import { activeGeoProvider, autocompleteAddress } from "@/lib/geo-services"
 import { NextResponse } from "next/server"
 
 export async function GET(req: Request) {
@@ -10,7 +10,7 @@ export async function GET(req: Request) {
 
   try {
     const suggestions = await autocompleteAddress(term)
-    return NextResponse.json({ suggestions, provider: "photon" })
+    return NextResponse.json({ suggestions, provider: activeGeoProvider() })
   } catch {
     return NextResponse.json({ suggestions: [], error: "lookup_failed" }, { status: 502 })
   }

@@ -1,7 +1,9 @@
+import { addressLegSchema } from "@/lib/validators/quote"
 import type { AddressLeg, JourneySummary } from "@/types/quote"
 
 const PHOTON_BASE = "https://photon.komoot.io/api/"
-const OSRM_BASE = "http://router.project-osrm.org"
+// TODO: Replace with self-hosted OSRM before production traffic
+const OSRM_BASE = "https://router.project-osrm.org"
 const GOOGLE_BASE = "https://maps.googleapis.com/maps/api"
 
 type GeoProvider = "free" | "google"
@@ -60,9 +62,13 @@ function geoProvider(): GeoProvider {
   return process.env.GEO_PROVIDER === "google" ? "google" : "free"
 }
 
+export function activeGeoProvider(): "google" | "photon" {
+  return geoProvider() === "google" ? "google" : "photon"
+}
+
 function googleKey(): string {
-  const key = process.env.GOOGLE_MAPS_SERVER_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-  if (!key) throw new Error("google_maps_key_missing")
+  const key = process.env.GOOGLE_MAPS_SERVER_API_KEY
+  if (!key) throw new Error("GOOGLE_MAPS_SERVER_API_KEY is required")
   return key
 }
 
@@ -77,9 +83,9 @@ function component(components: GoogleAddressComponent[] | undefined, type: strin
 
 export function decodeAddress(id: string): AddressLeg | null {
   try {
-    const parsed = JSON.parse(Buffer.from(id, "base64url").toString("utf8")) as AddressLeg
-    if (!parsed.addr || typeof parsed.lat !== "number" || typeof parsed.long !== "number") return null
-    return parsed
+    const raw: unknown = JSON.parse(Buffer.from(id, "base64url").toString("utf8"))
+    const result = addressLegSchema.safeParse(raw)
+    return result.success ? result.data : null
   } catch {
     return null
   }

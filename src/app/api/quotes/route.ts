@@ -1,5 +1,5 @@
 import { computeQuotes } from "@/lib/pricing"
-import { quoteRequestSchema } from "@/lib/validators/quote"
+import { COORDS_REQUIRED_MESSAGE, hasCoordsValidationError, quoteRequestSchema } from "@/lib/validators/quote"
 import { NextResponse } from "next/server"
 
 export async function POST(req: Request) {
@@ -12,6 +12,9 @@ export async function POST(req: Request) {
 
   const parsed = quoteRequestSchema.safeParse(body)
   if (!parsed.success) {
+    if (hasCoordsValidationError(parsed.error)) {
+      return NextResponse.json({ error: COORDS_REQUIRED_MESSAGE }, { status: 400 })
+    }
     return NextResponse.json({ error: "validation_error", issues: parsed.error.flatten() }, { status: 400 })
   }
 

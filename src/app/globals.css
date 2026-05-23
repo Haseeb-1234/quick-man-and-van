@@ -1,19 +1,96 @@
+@import url("https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=DM+Sans:wght@400;500;600&display=swap");
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #18181b;
-  --brand: #3fb6ee;
+  --bg-page: #0f1923;
+  --bg-surface: #1a2733;
+  --bg-hover: #223040;
+  --accent: #f59e0b;
+  --accent-hover: #fbbf24;
+  --accent-dim: #92610a;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #4b5563;
+  --border: rgba(255, 255, 255, 0.07);
+  --border-accent: rgba(245, 158, 11, 0.3);
+  --background: #0f1923;
+  --foreground: #f1f5f9;
+  --brand: #f59e0b;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
-    "Segoe UI Symbol", "Noto Color Emoji";
+  --color-dm-page: #0f1923;
+  --color-dm-surface: #1a2733;
+  --color-dm-accent: #f59e0b;
+  --color-dm-primary: #f1f5f9;
+  --color-dm-secondary: #94a3b8;
+  --font-display: "Barlow Condensed", sans-serif;
+  --font-body: "DM Sans", sans-serif;
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+    "Noto Color Emoji";
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background-color: #0f1923;
+  color: #f1f5f9;
+  font-family: "DM Sans", sans-serif;
+}
+
+.btn-primary {
+  background: #f59e0b;
+  color: #0f1923;
+  font-weight: 700;
+  font-family: "DM Sans", sans-serif;
+  letter-spacing: 0.02em;
+  transition: all 0.15s ease;
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.15);
+}
+
+.btn-primary:hover {
+  background: #fbbf24;
+  box-shadow: 0 0 28px rgba(245, 158, 11, 0.3);
+}
+
+.btn-secondary {
+  background: transparent;
+  border: 1.5px solid #f59e0b;
+  color: #f59e0b;
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+
+.btn-secondary:hover {
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.surface-card {
+  background: #1a2733;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.text-accent {
+  color: #f59e0b;
+}
+
+.text-primary-dm {
+  color: #f1f5f9;
+}
+
+.text-secondary-dm {
+  color: #94a3b8;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0f1923;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2d3f50;
+  border-radius: 3px;
 }

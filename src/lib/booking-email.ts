@@ -11,7 +11,7 @@ export async function sendBookingConfirmationEmail(booking: Booking): Promise<bo
   const stops =
     booking.stops && Array.isArray(booking.stops)
       ? (booking.stops as { line?: string; postcode?: string }[])
-          .map((s, i) => `<li>Stop ${i + 1}: ${s.line ?? ""} (${s.postcode ?? ""})</li>`)
+          .map((s, i) => `<li>Stop ${i + 1}: ${escapeHtml(String(s.line ?? ""))} (${escapeHtml(String(s.postcode ?? ""))})</li>`)
           .join("")
       : ""
 
@@ -50,4 +50,5 @@ function escapeHtml(s: string): string {
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#x27;")
 }

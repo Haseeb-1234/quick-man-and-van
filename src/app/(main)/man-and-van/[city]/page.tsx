@@ -34,9 +34,9 @@ export default async function CityPage({ params }: Props) {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 sm:py-24">
-      <p className="text-sm font-semibold uppercase tracking-wide text-[#3fb6ee]">Local service</p>
-      <h1 className="mt-2 text-4xl font-bold tracking-tight text-zinc-900">Man and van in {name}</h1>
-      <p className="mt-4 text-lg leading-relaxed text-zinc-600">
+      <p className="text-sm font-semibold uppercase tracking-wide text-[#F59E0B]">Local service</p>
+      <h1 className="mt-2 font-display text-4xl font-bold tracking-tight text-[#F1F5F9]">Man and van in {name}</h1>
+      <p className="mt-4 text-lg leading-relaxed text-[#94A3B8]">
         Whether you&apos;re moving flat, shifting furniture, or need a delivery across {name}, you can get an
         instant quote online and book when it suits you. This page will gain richer SEO copy, FAQs, and internal
         links in Phase 3.

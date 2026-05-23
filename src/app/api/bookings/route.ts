@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { computeQuotes, parseMoveDateTime, vanLabels } from "@/lib/pricing"
-import { createBookingSchema } from "@/lib/validators/quote"
+import { COORDS_REQUIRED_MESSAGE, createBookingSchema, hasCoordsValidationError } from "@/lib/validators/quote"
+import { randomUUID } from "crypto"
 import { NextResponse } from "next/server"
 
 export async function POST(req: Request) {
@@ -13,14 +14,23 @@ export async function POST(req: Request) {
 
   const parsed = createBookingSchema.safeParse(body)
   if (!parsed.success) {
+    if (hasCoordsValidationError(parsed.error)) {
+      return NextResponse.json({ error: COORDS_REQUIRED_MESSAGE }, { status: 400 })
+    }
     return NextResponse.json({ error: "validation_error", issues: parsed.error.flatten() }, { status: 400 })
   }
 
   const data = parsed.data
-  const { quotes } = await computeQuotes(data)
-  const bestQuote = quotes[0]
+  const { minHours } = await computeQuotes(data)
+  const enforcedHours = Math.max(data.hours, minHours)
+  const bookingInput = { ...data, hours: enforcedHours }
+  const { quotes } = await computeQuotes(bookingInput)
+  const selectedQuote = data.selectedQuoteId ? quotes.find((q) => q.id === data.selectedQuoteId) : null
+  const bestQuote = selectedQuote ?? quotes[0]
 
   try {
+    const checkoutToken = randomUUID()
+
     const booking = await prisma.booking.create({
       data: {
         collectionAddress: data.collection.addr,
@@ -34,15 +44,19 @@ export async function POST(req: Request) {
         vanSize: vanLabels[data.vantype],
         helpers: data.helpers,
         price: bestQuote?.price ?? 0,
+        bookedHours: enforcedHours,
+        bookedVanType: data.vantype,
         contactEmail: data.clientemail,
         contactName: data.clientname?.trim() || null,
         contactPhone: data.clientphone?.trim() || null,
+        checkoutToken,
         status: "PENDING",
       },
     })
 
     return NextResponse.json({
       bookingId: booking.id,
+      checkoutToken: booking.checkoutToken,
       price: booking.price,
     })
   } catch (e) {

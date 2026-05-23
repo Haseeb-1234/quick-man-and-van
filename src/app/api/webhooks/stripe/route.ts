@@ -38,14 +38,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ received: true, skipped: "booking_missing" })
     }
 
-    if (booking.status === "CONFIRMED") {
-      return NextResponse.json({ received: true, idempotent: true })
-    }
-
     const paidGbp = (session.amount_total ?? 0) / 100
     if (Math.abs(paidGbp - booking.price) > 0.02) {
-      console.error("Amount mismatch", { paidGbp, booking: booking.price, bookingId })
-      return NextResponse.json({ received: true, error: "amount_mismatch" }, { status: 200 })
+      console.error("Amount mismatch", {
+        bookingId,
+        paidGbp,
+        storedPrice: booking.price,
+      })
+      return NextResponse.json({ error: "amount mismatch" }, { status: 500 })
     }
 
     const paymentIntentId =
@@ -53,8 +53,8 @@ export async function POST(req: Request) {
         ? session.payment_intent
         : session.payment_intent?.id ?? null
 
-    await prisma.booking.update({
-      where: { id: booking.id },
+    const result = await prisma.booking.updateMany({
+      where: { id: bookingId, status: "PENDING" },
       data: {
         status: "CONFIRMED",
         stripePaymentId: paymentIntentId,
@@ -62,9 +62,16 @@ export async function POST(req: Request) {
       },
     })
 
-    const updated = await prisma.booking.findUnique({ where: { id: booking.id } })
-    if (updated) {
-      await sendBookingConfirmationEmail(updated)
+    if (result.count === 0) {
+      console.warn("Webhook checkout.session.completed: booking already processed or not pending", {
+        bookingId,
+      })
+      return NextResponse.json({ received: true, idempotent: true })
+    }
+
+    const confirmed = await prisma.booking.findUnique({ where: { id: bookingId } })
+    if (confirmed) {
+      await sendBookingConfirmationEmail(confirmed)
     }
   }
 

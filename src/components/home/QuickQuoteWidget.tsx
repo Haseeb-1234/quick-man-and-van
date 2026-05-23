@@ -20,29 +20,29 @@ export function QuickQuoteWidget() {
       return
     }
 
+    const stairsValue = homeStairs ? "1" : "0"
     const params = new URLSearchParams({
-      ...legParams("collect", collection),
-      ...legParams("deliver", delivery),
-      home_stairs: homeStairs ? "1" : "0",
+      ...legParams("collect", collection, stairsValue),
+      ...legParams("deliver", delivery, stairsValue),
       home_stops: homeStops ? "1" : "0",
-      submitter: "homepage",
+      submitter: "widget",
     })
     router.push(`/move?${params}`)
   }
 
   return (
-    <div className="bg-zinc-950/90 p-6 text-white shadow-2xl sm:p-8">
-      <h2 className="text-3xl font-bold">Man and Van Quotes</h2>
-      <p className="mt-2 text-sm leading-6 text-zinc-200">
+    <div className="surface-card p-6 text-[#F1F5F9] shadow-[0_4px_24px_rgba(0,0,0,0.5)] sm:p-8">
+      <h2 className="font-display text-3xl font-bold text-[#F1F5F9]">Man and Van Quotes</h2>
+      <p className="mt-2 text-sm leading-6 text-[#94A3B8]">
         Get <strong>free quotes</strong> for <strong>Man and Van service</strong> in under a minute. <strong>Book online</strong> and move.
       </p>
 
-      <div className="mt-6 space-y-4 text-zinc-900">
+      <div className="mt-6 space-y-4 text-[#F1F5F9]">
         <AddressBlock title="Collection" searchLabel="Collection address" leg={collection} onChange={setCollection} compact />
         <AddressBlock title="Delivery" searchLabel="Delivery address" leg={delivery} onChange={setDelivery} compact />
       </div>
 
-      <div className="mt-4 space-y-3 text-sm text-zinc-100">
+      <div className="mt-4 space-y-3 text-sm text-[#F1F5F9]">
         <label className="flex items-center gap-2">
           <input type="checkbox" checked={homeStairs} onChange={(e) => setHomeStairs(e.target.checked)} />
           There are stairs at the locations
@@ -55,13 +55,13 @@ export function QuickQuoteWidget() {
 
       {error ? <p className="mt-3 text-sm text-red-200">{error}</p> : null}
 
-      <Button type="button" className="mt-5 w-full rounded bg-[#00bcd4] py-3 uppercase hover:bg-[#0097a7]" onClick={submit}>
+      <Button type="button" className="btn-primary mt-5 w-full rounded py-3 uppercase" onClick={submit}>
         Submit
       </Button>
 
-      <div className="mt-5 flex items-end justify-between gap-4 text-xs text-zinc-300">
+      <div className="mt-5 flex items-end justify-between gap-4 text-xs text-[#94A3B8]">
         <p>Discounts can be applied on next pages.</p>
-        <a href="https://www.reviews.io/company-reviews/store/quickmanandvan-co-uk" target="_blank" className="text-right text-white">
+        <a href="https://www.reviews.io/company-reviews/store/quickmanandvan-co-uk" target="_blank" className="text-right text-[#F1F5F9]">
           <span className="block text-amber-300">★★★★★</span>
           on Reviews.io
         </a>
@@ -70,7 +70,7 @@ export function QuickQuoteWidget() {
   )
 }
 
-function legParams(prefix: "collect" | "deliver", leg: AddressLeg): Record<string, string> {
+function legParams(prefix: "collect" | "deliver", leg: AddressLeg, stairs = "0"): Record<string, string> {
   return {
     [`${prefix}addr`]: leg.addr,
     [`${prefix}street`]: leg.street,
@@ -78,5 +78,6 @@ function legParams(prefix: "collect" | "deliver", leg: AddressLeg): Record<strin
     [`${prefix}postcode`]: leg.postcode,
     [`${prefix}lat`]: String(leg.lat ?? ""),
     [`${prefix}long`]: String(leg.long ?? ""),
+    [`${prefix}_stairs`]: stairs,
   }
 }

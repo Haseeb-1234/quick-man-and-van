@@ -34,8 +34,11 @@ model Booking {
   helpers              Int           @default(0)
 
   price                Float
+  bookedHours          Float?
+  bookedVanType        Int?
   stripePaymentId      String?
   stripeSessionId      String?
+  checkoutToken        String?
   status               BookingStatus @default(PENDING)
 
   contactEmail         String?

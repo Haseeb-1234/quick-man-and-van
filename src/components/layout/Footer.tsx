@@ -15,42 +15,42 @@ const legalLinks = [
 
 export function Footer() {
   return (
-    <footer className="border-t border-zinc-200 bg-zinc-50">
+    <footer className="border-t border-[rgba(255,255,255,0.07)] bg-[#080F16]">
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <p className="font-semibold text-zinc-900">{SITE_NAME}</p>
-            <p className="mt-2 text-sm leading-relaxed text-zinc-600">
+            <p className="font-semibold text-[#F1F5F9]">{SITE_NAME}</p>
+            <p className="mt-2 text-sm leading-relaxed text-[#94A3B8]">
               Man and van moves across the UK. Instant quotes and simple booking — no driver app required on your side.
             </p>
           </div>
           <div>
-            <p className="text-sm font-semibold text-zinc-900">Contact</p>
-            <ul className="mt-3 space-y-2 text-sm text-zinc-600">
+            <p className="text-[13px] font-semibold uppercase tracking-[0.06em] text-[#F1F5F9]">Contact</p>
+            <ul className="mt-3 space-y-2 text-sm text-[#94A3B8]">
               <li>{CONTACT.hoursLabel}</li>
               <li>
-                <a href={`tel:${CONTACT.phoneTel1}`} className="text-[#3fb6ee] hover:underline">
+                <a href={`tel:${CONTACT.phoneTel1}`} className="text-[#F59E0B] transition duration-150 hover:text-[#FBBF24]">
                   {CONTACT.phoneDisplay1}
                 </a>
               </li>
               <li>
-                <a href={`tel:${CONTACT.phoneTel2}`} className="text-[#3fb6ee] hover:underline">
+                <a href={`tel:${CONTACT.phoneTel2}`} className="text-[#F59E0B] transition duration-150 hover:text-[#FBBF24]">
                   {CONTACT.phoneDisplay2}
                 </a>
               </li>
               <li>
-                <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="text-[#3fb6ee] hover:underline">
+                <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="text-[#F59E0B] transition duration-150 hover:text-[#FBBF24]">
                   WhatsApp
                 </a>
               </li>
             </ul>
           </div>
           <div>
-            <p className="text-sm font-semibold text-zinc-900">Areas</p>
+            <p className="text-[13px] font-semibold uppercase tracking-[0.06em] text-[#F1F5F9]">Areas</p>
             <ul className="mt-3 grid grid-cols-2 gap-x-2 gap-y-1 text-sm">
               {SERVICE_CITIES.map(({ slug, name }) => (
                 <li key={slug}>
-                  <Link href={`/man-and-van/${slug}`} className="text-zinc-600 hover:text-[#3fb6ee] hover:underline">
+                  <Link href={`/man-and-van/${slug}`} className="text-[#94A3B8] transition duration-150 hover:text-[#F59E0B]">
                     {name}
                   </Link>
                 </li>
@@ -58,18 +58,18 @@ export function Footer() {
             </ul>
           </div>
           <div>
-            <p className="text-sm font-semibold text-zinc-900">Guides & legal</p>
+            <p className="text-[13px] font-semibold uppercase tracking-[0.06em] text-[#F1F5F9]">Guides & legal</p>
             <ul className="mt-3 space-y-1 text-sm">
               {guideLinks.map(({ href, label }) => (
                 <li key={href}>
-                  <Link href={href} className="text-zinc-600 hover:text-[#3fb6ee] hover:underline">
+                  <Link href={href} className="text-[#94A3B8] transition duration-150 hover:text-[#F59E0B]">
                     {label}
                   </Link>
                 </li>
               ))}
               {legalLinks.map(({ href, label }) => (
                 <li key={href}>
-                  <Link href={href} className="text-zinc-600 hover:text-[#3fb6ee] hover:underline">
+                  <Link href={href} className="text-[#94A3B8] transition duration-150 hover:text-[#F59E0B]">
                     {label}
                   </Link>
                 </li>
@@ -77,7 +77,7 @@ export function Footer() {
             </ul>
           </div>
         </div>
-        <p className="mt-10 border-t border-zinc-200 pt-8 text-center text-xs text-zinc-500">
+        <p className="mt-10 border-t border-[rgba(255,255,255,0.07)] pt-8 text-center text-[13px] text-[#4B5563]">
           © {new Date().getFullYear()} {SITE_NAME}. All rights reserved.
         </p>
       </div>
