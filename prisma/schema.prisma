@@ -11,42 +11,37 @@ model Customer {
   email     String    @unique
   name      String?
   phone     String?
-  bookings  Booking[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  bookings  Booking[]
 }
 
 model Booking {
-  id                   String        @id @default(cuid())
-  customer             Customer?     @relation(fields: [customerId], references: [id])
-  customerId           String?
-
-  collectionAddress    String
-  collectionPostcode   String
-  deliveryAddress      String
-  deliveryPostcode     String
-  stops                Json?
-
-  collectionStairs     Int           @default(0)
-  deliveryStairs       Int           @default(0)
-  moveDate             DateTime
-  vanSize              String
-  helpers              Int           @default(0)
-
-  price                Float
-  bookedHours          Float?
-  bookedVanType        Int?
-  stripePaymentId      String?
-  stripeSessionId      String?
-  checkoutToken        String?
-  status               BookingStatus @default(PENDING)
-
-  contactEmail         String?
-  contactName          String?
-  contactPhone         String?
-
-  createdAt            DateTime      @default(now())
-  updatedAt            DateTime      @updatedAt
+  id                 String        @id @default(cuid())
+  customerId         String?
+  collectionAddress  String
+  collectionPostcode String
+  deliveryAddress    String
+  deliveryPostcode   String
+  stops              Json?
+  collectionStairs   Int           @default(0)
+  deliveryStairs     Int           @default(0)
+  moveDate           DateTime
+  vanSize            String
+  helpers            Int           @default(0)
+  price              Float
+  bookedHours        Float?
+  bookedVanType      Int?
+  stripePaymentId    String?
+  stripeSessionId    String?
+  checkoutToken      String?
+  status             BookingStatus @default(PENDING)
+  contactEmail       String?
+  contactName        String?
+  contactPhone       String?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  customer           Customer?     @relation(fields: [customerId], references: [id])
 }
 
 enum BookingStatus {
