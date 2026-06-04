@@ -1,8 +1,9 @@
 "use client"
 
-import { AddressBlock, emptyAddressLeg } from "@/components/quote/AddressBlock"
+import { AddressBlock } from "@/components/quote/AddressBlock"
 import { Button, ButtonLink } from "@/components/ui/Button"
 import type { AddressLeg, DriverQuote, JourneySummary, QuoteRequest, VanType } from "@/types/quote"
+import { emptyAddressLeg } from "@/types/quote"
 import { useSearchParams } from "next/navigation"
 import { useMemo, useState } from "react"
 
@@ -25,6 +26,10 @@ type QuoteResponse = {
   minHours: number
   minPrice: number
   quotes: DriverQuote[]
+}
+
+type ApiError = {
+  error?: string
 }
 
 function tomorrowUk(): string {
@@ -135,9 +140,13 @@ export function MoveWizard({ initialStep = 1 }: MoveWizardProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       })
-      const data = (await res.json()) as QuoteResponse & { error?: string }
+      const data = (await readJsonResponse<QuoteResponse | ApiError>(res)) ?? {}
       if (!res.ok) {
-        setError(data.error || "Could not calculate quotes. Please check your addresses and try again.")
+        setError(getApiError(data) || "Could not calculate quotes. Please check your addresses and try again.")
+        return false
+      }
+      if (!isQuoteResponse(data)) {
+        setError("Could not calculate quotes. Please check your addresses and try again.")
         return false
       }
       setQuoteData(data)
@@ -305,7 +314,7 @@ export function MoveWizard({ initialStep = 1 }: MoveWizardProps) {
                 <select
                   value={hours}
                   onChange={(e) => setHours(Number(e.target.value))}
-                  className="mt-1 w-full rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] px-3 py-3 font-normal text-[#F1F5F9] [color-scheme:dark] focus:border-[#F59E0B] focus:outline-none focus:ring-2 focus:ring-[rgba(245,158,11,0.15)]"
+                  className="mt-1 w-full rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] p-3 font-normal text-[#F1F5F9] [color-scheme:dark] focus:border-[#F59E0B] focus:outline-none focus:ring-2 focus:ring-[rgba(245,158,11,0.15)]"
                 >
                   {hoursOptions().map((h) => (
                     <option key={h} value={h}>
@@ -343,12 +352,12 @@ export function MoveWizard({ initialStep = 1 }: MoveWizardProps) {
                     type="date"
                     value={ukToIso(date)}
                     onChange={(e) => setDate(isoToUk(e.target.value))}
-                    className="mt-1 w-full rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] px-3 py-3 font-normal text-[#F1F5F9] [color-scheme:dark] focus:border-[#F59E0B] focus:outline-none focus:ring-2 focus:ring-[rgba(245,158,11,0.15)]"
+                    className="mt-1 w-full rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] p-3 font-normal text-[#F1F5F9] [color-scheme:dark] focus:border-[#F59E0B] focus:outline-none focus:ring-2 focus:ring-[rgba(245,158,11,0.15)]"
                   />
                 </label>
                 <label className="text-[13px] font-medium uppercase tracking-[0.04em] text-[#94A3B8]">
                   at
-                  <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="mt-1 w-full rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] px-3 py-3 font-normal text-[#F1F5F9] [color-scheme:dark] focus:border-[#F59E0B] focus:outline-none focus:ring-2 focus:ring-[rgba(245,158,11,0.15)]" />
+                  <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="mt-1 w-full rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] p-3 font-normal text-[#F1F5F9] [color-scheme:dark] focus:border-[#F59E0B] focus:outline-none focus:ring-2 focus:ring-[rgba(245,158,11,0.15)]" />
                 </label>
               </div>
               <p className="mt-5 rounded bg-[rgba(245,158,11,0.08)] px-4 py-3 text-sm text-[#94A3B8]">
@@ -384,7 +393,7 @@ export function MoveWizard({ initialStep = 1 }: MoveWizardProps) {
                   <textarea
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    className="mt-1 min-h-24 w-full rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] px-3 py-3 font-normal normal-case tracking-normal text-[#F1F5F9] placeholder:text-[#4B5563] focus:border-[#F59E0B] focus:outline-none focus:ring-2 focus:ring-[rgba(245,158,11,0.15)]"
+                    className="mt-1 min-h-24 w-full rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] p-3 font-normal normal-case tracking-normal text-[#F1F5F9] placeholder:text-[#4B5563] focus:border-[#F59E0B] focus:outline-none focus:ring-2 focus:ring-[rgba(245,158,11,0.15)]"
                   />
                 </label>
               </div>
@@ -453,11 +462,36 @@ export function MoveWizard({ initialStep = 1 }: MoveWizardProps) {
   )
 }
 
+async function readJsonResponse<T>(res: Response): Promise<T | null> {
+  const contentType = res.headers.get("content-type")
+  if (!contentType?.includes("application/json")) return null
+  return (await res.json()) as T
+}
+
+function isQuoteResponse(value: unknown): value is QuoteResponse {
+  if (!value || typeof value !== "object") return false
+
+  const candidate = value as Partial<QuoteResponse>
+  return (
+    typeof candidate.minHours === "number" &&
+    typeof candidate.minPrice === "number" &&
+    Array.isArray(candidate.quotes) &&
+    Boolean(candidate.journey)
+  )
+}
+
+function getApiError(value: unknown): string | undefined {
+  if (!value || typeof value !== "object") return undefined
+  const error = (value as ApiError).error
+  return typeof error === "string" ? error : undefined
+}
+
+const PROGRESS_LABELS = ["Route", "Move details", "About you", "Quotes"]
+
 function Progress({ step }: { step: number }) {
-  const labels = ["Route", "Move details", "About you", "Quotes"]
   return (
     <ol className="mb-8 grid grid-cols-4 gap-2 text-xs font-bold uppercase text-[#94A3B8]">
-      {labels.map((label, index) => {
+      {PROGRESS_LABELS.map((label, index) => {
         const n = index + 1
         return (
           <li key={label} className={n < step ? "text-[#F59E0B]" : n === step ? "font-bold text-[#0F1923]" : "text-[#94A3B8]"}>
@@ -507,13 +541,13 @@ function ClearableInput({
           required={required}
           placeholder={required ? "required" : "optional"}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] px-3 py-3 pr-10 font-normal normal-case tracking-normal text-[#F1F5F9] placeholder:text-[#4B5563] focus:border-[#F59E0B] focus:outline-none focus:ring-2 focus:ring-[rgba(245,158,11,0.15)]"
+          className="w-full rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] p-3 pr-10 font-normal normal-case tracking-normal text-[#F1F5F9] placeholder:text-[#4B5563] focus:border-[#F59E0B] focus:outline-none focus:ring-2 focus:ring-[rgba(245,158,11,0.15)]"
         />
         {value ? (
           <button
             type="button"
             onClick={() => onChange("")}
-            className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded text-[#94A3B8] hover:bg-[#223040] hover:text-[#F59E0B]"
+            className="absolute right-2 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded text-[#94A3B8] hover:bg-[#223040] hover:text-[#F59E0B]"
           >
             x
           </button>

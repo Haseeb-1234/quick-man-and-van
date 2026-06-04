@@ -18,7 +18,7 @@ export function Navbar() {
     <header className="sticky top-0 z-50 border-b border-[rgba(255,255,255,0.07)] bg-[#1A2733]/95 backdrop-blur-sm">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
         <Link href="/" className="flex shrink-0 items-center gap-2 font-semibold tracking-tight text-[#F59E0B]">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#F59E0B] text-sm font-bold text-[#0F1923]">
+          <span className="flex size-9 items-center justify-center rounded-lg bg-[#F59E0B] text-sm font-bold text-[#0F1923]">
             Q
           </span>
           <span className="hidden min-[380px]:inline">{SITE_NAME}</span>
@@ -52,7 +52,7 @@ export function Navbar() {
 
         <button
           type="button"
-          className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[rgba(255,255,255,0.07)] text-[#F59E0B] transition duration-150 hover:bg-[#223040] md:hidden"
+          className="inline-flex size-10 items-center justify-center rounded-lg border border-[rgba(255,255,255,0.07)] text-[#F59E0B] transition duration-150 hover:bg-[#223040] md:hidden"
           aria-expanded={open}
           aria-controls="mobile-nav"
           onClick={() => setOpen((v) => !v)}
@@ -71,13 +71,13 @@ export function Navbar() {
       </div>
 
       {open ? (
-        <div id="mobile-nav" className="border-t border-[rgba(255,255,255,0.07)] bg-[#1A2733] px-4 py-4 md:hidden">
+        <div id="mobile-nav" className="border-t border-[rgba(255,255,255,0.07)] bg-[#1A2733] p-4 md:hidden">
           <nav className="flex flex-col gap-1" aria-label="Mobile">
             {navLinks.map(({ href, label }) => (
               <Link
                 key={href}
                 href={href}
-                className="rounded-lg px-3 py-3 text-base font-medium text-[#94A3B8] transition duration-150 hover:bg-[#223040] hover:text-[#F1F5F9]"
+                className="rounded-lg p-3 text-base font-medium text-[#94A3B8] transition duration-150 hover:bg-[#223040] hover:text-[#F1F5F9]"
                 onClick={() => setOpen(false)}
               >
                 {label}
@@ -87,7 +87,7 @@ export function Navbar() {
               href={WHATSAPP_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-lg px-3 py-3 text-base font-semibold text-[#F59E0B] transition duration-150 hover:bg-[#223040] hover:text-[#FBBF24]"
+              className="rounded-lg p-3 text-base font-semibold text-[#F59E0B] transition duration-150 hover:bg-[#223040] hover:text-[#FBBF24]"
             >
               WhatsApp
             </a>

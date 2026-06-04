@@ -30,7 +30,7 @@ export function HowItWorks() {
               <span className="absolute right-5 top-2 font-display text-5xl font-bold text-[rgba(245,158,11,0.15)]" aria-hidden>
                 {step}
               </span>
-              <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[rgba(245,158,11,0.12)] text-sm font-bold text-[#F59E0B]">
+              <span className="relative flex size-10 items-center justify-center rounded-full bg-[rgba(245,158,11,0.12)] text-sm font-bold text-[#F59E0B]">
                 {step}
               </span>
               <h3 className="relative mt-4 text-lg font-semibold text-[#F1F5F9]">{title}</h3>

@@ -5,6 +5,8 @@ const PHOTON_BASE = "https://photon.komoot.io/api/"
 // TODO: Replace with self-hosted OSRM before production traffic
 const OSRM_BASE = "https://router.project-osrm.org"
 const GOOGLE_BASE = "https://maps.googleapis.com/maps/api"
+const JOURNEY_CACHE_TTL_MS = 10 * 60 * 1000
+const MAX_JOURNEY_CACHE_ENTRIES = 250
 
 type GeoProvider = "free" | "google"
 
@@ -50,6 +52,13 @@ type GoogleDistanceResponse = {
   rows?: { elements?: { status: string; distance?: { value: number }; duration?: { value: number } }[] }[]
 }
 
+type JourneyCacheEntry = {
+  expiresAt: number
+  value: JourneySummary
+}
+
+const journeyCache = new Map<string, JourneyCacheEntry>()
+
 export type AddressSuggestion = {
   id: string
   address: string
@@ -92,11 +101,13 @@ export function decodeAddress(id: string): AddressLeg | null {
 }
 
 function formatLabel(parts: Array<string | undefined>): string {
-  return parts
-    .map((part) => part?.trim())
-    .filter((part): part is string => Boolean(part))
-    .filter((part, index, arr) => arr.indexOf(part) === index)
-    .join(", ")
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const part of parts) {
+    const t = part?.trim()
+    if (t && !seen.has(t)) { seen.add(t); out.push(t) }
+  }
+  return out.join(", ")
 }
 
 function looksLikeUkPostcode(value: string | undefined): boolean {
@@ -245,6 +256,29 @@ function haversineKm(a: AddressLeg, b: AddressLeg): number {
   return radius * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x))
 }
 
+function journeyCacheKey(provider: GeoProvider, usable: Array<AddressLeg & { lat: number; long: number }>): string {
+  const coords = usable.map((leg) => `${leg.lat.toFixed(5)},${leg.long.toFixed(5)}`).join("|")
+  return `${provider}:${coords}`
+}
+
+function getCachedJourney(key: string): JourneySummary | null {
+  const cached = journeyCache.get(key)
+  if (!cached) return null
+  if (cached.expiresAt <= Date.now()) {
+    journeyCache.delete(key)
+    return null
+  }
+  return cached.value
+}
+
+function setCachedJourney(key: string, value: JourneySummary): void {
+  if (journeyCache.size >= MAX_JOURNEY_CACHE_ENTRIES) {
+    const oldestKey = journeyCache.keys().next().value
+    if (oldestKey) journeyCache.delete(oldestKey)
+  }
+  journeyCache.set(key, { value, expiresAt: Date.now() + JOURNEY_CACHE_TTL_MS })
+}
+
 async function osrmLeg(from: AddressLeg & { lat: number; long: number }, to: AddressLeg & { lat: number; long: number }) {
   const coords = `${from.long},${from.lat};${to.long},${to.lat}`
 
@@ -265,56 +299,66 @@ export async function getJourneySummary(legs: AddressLeg[]): Promise<JourneySumm
   const usable = legs.filter((leg): leg is AddressLeg & { lat: number; long: number } => Boolean(leg.addr) && hasCoords(leg))
   if (usable.length < 2) return { distanceKm: 0, durationMinutes: 0, source: "haversine" }
 
-  if (geoProvider() === "google") {
+  const provider = geoProvider()
+  const cacheKey = journeyCacheKey(provider, usable)
+  const cached = getCachedJourney(cacheKey)
+  if (cached) return cached
+
+  if (provider === "google") {
     try {
-      return await getGoogleJourneySummary(usable)
+      const summary = await getGoogleJourneySummary(usable)
+      setCachedJourney(cacheKey, summary)
+      return summary
     } catch {
-      return getFallbackJourneySummary(usable)
+      const summary = getFallbackJourneySummary(usable)
+      setCachedJourney(cacheKey, summary)
+      return summary
     }
   }
 
   try {
-    let distanceMeters = 0
-    let durationSeconds = 0
+    const legResults = await Promise.all(
+      Array.from({ length: usable.length - 1 }, (_, i) => osrmLeg(usable[i], usable[i + 1]))
+    )
+    const distanceMeters = legResults.reduce((sum, leg) => sum + leg.distanceMeters, 0)
+    const durationSeconds = legResults.reduce((sum, leg) => sum + leg.durationSeconds, 0)
 
-    for (let i = 0; i < usable.length - 1; i += 1) {
-      const leg = await osrmLeg(usable[i], usable[i + 1])
-      distanceMeters += leg.distanceMeters
-      durationSeconds += leg.durationSeconds
-    }
-
-    return {
+    const summary: JourneySummary = {
       distanceKm: Math.round((distanceMeters / 1000) * 10) / 10,
       durationMinutes: Math.max(1, Math.round(durationSeconds / 60)),
       source: "osrm",
     }
+    setCachedJourney(cacheKey, summary)
+    return summary
   } catch {
-    return getFallbackJourneySummary(usable)
+    const summary = getFallbackJourneySummary(usable)
+    setCachedJourney(cacheKey, summary)
+    return summary
   }
 }
 
 async function getGoogleJourneySummary(usable: Array<AddressLeg & { lat: number; long: number }>): Promise<JourneySummary> {
-  let distanceMeters = 0
-  let durationSeconds = 0
-
-  for (let i = 0; i < usable.length - 1; i += 1) {
-    const from = usable[i]
-    const to = usable[i + 1]
-    const params = new URLSearchParams({
-      origins: `${from.lat},${from.long}`,
-      destinations: `${to.lat},${to.long}`,
-      mode: "driving",
-      units: "metric",
-      key: googleKey(),
+  const legResults = await Promise.all(
+    Array.from({ length: usable.length - 1 }, async (_, i) => {
+      const from = usable[i]
+      const to = usable[i + 1]
+      const params = new URLSearchParams({
+        origins: `${from.lat},${from.long}`,
+        destinations: `${to.lat},${to.long}`,
+        mode: "driving",
+        units: "metric",
+        key: googleKey(),
+      })
+      const res = await fetch(`${GOOGLE_BASE}/distancematrix/json?${params}`, { cache: "no-store" })
+      if (!res.ok) throw new Error("google_distance_failed")
+      const data = (await res.json()) as GoogleDistanceResponse
+      const element = data.rows?.[0]?.elements?.[0]
+      if (element?.status !== "OK" || !element.distance || !element.duration) throw new Error("google_distance_not_found")
+      return { distance: element.distance.value, duration: element.duration.value }
     })
-    const res = await fetch(`${GOOGLE_BASE}/distancematrix/json?${params}`, { cache: "no-store" })
-    if (!res.ok) throw new Error("google_distance_failed")
-    const data = (await res.json()) as GoogleDistanceResponse
-    const element = data.rows?.[0]?.elements?.[0]
-    if (element?.status !== "OK" || !element.distance || !element.duration) throw new Error("google_distance_not_found")
-    distanceMeters += element.distance.value
-    durationSeconds += element.duration.value
-  }
+  )
+  const distanceMeters = legResults.reduce((sum, r) => sum + r.distance, 0)
+  const durationSeconds = legResults.reduce((sum, r) => sum + r.duration, 0)
 
   return {
     distanceKm: Math.round((distanceMeters / 1000) * 10) / 10,
@@ -331,3 +375,4 @@ function getFallbackJourneySummary(usable: Array<AddressLeg & { lat: number; lon
     source: "haversine",
   }
 }
+

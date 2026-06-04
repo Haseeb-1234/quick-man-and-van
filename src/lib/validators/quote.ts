@@ -81,7 +81,7 @@ export const quoteRequestSchema = z.object({
 
 export const createBookingSchema = quoteRequestSchema.extend({
   clientname: z.string().min(2).max(120),
-  clientemail: z.string().email(),
+  clientemail: z.email(),
   clientphone: z.string().min(7).max(30),
   message: z.string().max(1000).optional(),
   selectedQuoteId: z.string().max(50).optional(),
@@ -89,7 +89,7 @@ export const createBookingSchema = quoteRequestSchema.extend({
 
 export const checkoutBodySchema = z.object({
   bookingId: z.string().min(10),
-  checkoutToken: z.string().uuid(),
+  checkoutToken: z.uuid(),
 })
 
 export function hasCoordsValidationError(error: z.ZodError): boolean {

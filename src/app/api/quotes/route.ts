@@ -1,8 +1,12 @@
+import { rejectOversizedJsonRequest } from "@/lib/api-security"
 import { computeQuotes } from "@/lib/pricing"
 import { COORDS_REQUIRED_MESSAGE, hasCoordsValidationError, quoteRequestSchema } from "@/lib/validators/quote"
 import { NextResponse } from "next/server"
 
 export async function POST(req: Request) {
+  const sizeError = rejectOversizedJsonRequest(req)
+  if (sizeError) return sizeError
+
   let body: unknown
   try {
     body = await req.json()

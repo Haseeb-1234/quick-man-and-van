@@ -28,7 +28,7 @@ export default async function MoveSuccessPage({ searchParams }: Props) {
 
   return (
     <div className="mx-auto max-w-lg px-4 py-16 text-center sm:px-6 sm:py-24">
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[rgba(245,158,11,0.12)] text-2xl text-[#F59E0B]" aria-hidden>
+      <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-[rgba(245,158,11,0.12)] text-2xl text-[#F59E0B]" aria-hidden>
         ✓
       </div>
       <h1 className="mt-6 text-2xl font-bold text-[#F1F5F9]">Thank you</h1>

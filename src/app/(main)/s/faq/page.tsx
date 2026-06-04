@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Link from "next/link"
 
 export const metadata: Metadata = {
   title: "FAQ",
@@ -11,7 +12,7 @@ export default function FaqPage() {
       <h1 className="font-display text-3xl font-bold tracking-tight text-[#F1F5F9]">FAQ</h1>
       <p className="mt-4 text-[#94A3B8]">
         Common questions about pricing, what we move, coverage, and cancellations will be expanded here. For now,
-        use <a href="/contact" className="font-medium text-[#F59E0B] transition duration-150 hover:text-[#FBBF24]">Contact</a> or WhatsApp for
+        use <Link href="/contact" className="font-medium text-[#F59E0B] transition duration-150 hover:text-[#FBBF24]">Contact</Link> or WhatsApp for
         specific questions.
       </p>
     </article>

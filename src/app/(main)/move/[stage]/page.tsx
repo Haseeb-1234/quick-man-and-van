@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 function WizardFallback() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-16 text-center text-sm text-zinc-500 sm:px-6" aria-busy="true">
-      Loading quote wizard...
+      Loading quote wizard…
     </div>
   )
 }

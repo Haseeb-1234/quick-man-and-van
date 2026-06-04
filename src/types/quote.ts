@@ -1,3 +1,4 @@
+
 export type VanType = 0 | 1 | 2 | 3
 
 export type AddressLeg = {
@@ -8,6 +9,10 @@ export type AddressLeg = {
   lat: number | null
   long: number | null
   stairs: number
+}
+
+export function emptyAddressLeg(): AddressLeg {
+  return { addr: "", street: "", city: "", postcode: "", lat: null, long: null, stairs: 0 }
 }
 
 export type QuoteRequest = {

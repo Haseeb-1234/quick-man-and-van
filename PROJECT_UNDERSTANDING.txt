@@ -1,0 +1,908 @@
+================================================================================
+QUICK MAN AND VAN — COMPLETE SYSTEM UNDERSTANDING
+================================================================================
+Created: 2026-06-05
+Purpose: Deep explanation of how the application works today, what is real vs
+         hardcoded, and the full roadmap for turning it into a real platform.
+================================================================================
+
+
+================================================================================
+SECTION 1: HOW THE APPLICATION FLOW WORKS (END TO END)
+================================================================================
+
+The application is a 4-step booking wizard that lives at /move/[stage].
+The URL segment (1, 2, 3, 4) controls which step is shown. Navigation between
+steps uses window.history.pushState so the URL updates without a full page
+reload — the entire wizard lives in a single React component called MoveWizard.
+
+------------------------------------------------------------------------
+STEP 1 — Route (/move/1)
+------------------------------------------------------------------------
+The user types a pickup address (collection) and a drop-off address (delivery).
+They can also add up to 3 optional stop points in between.
+
+As the user types, the app calls GET /api/addresses?q=... which hits an
+external geocoding API (explained in Section 2) and returns up to 7 address
+suggestions. The user MUST click one of those suggestions — freetyping is
+blocked at the API level because the app needs coordinates (lat/long) to
+calculate distance. If someone types but doesn't pick from the dropdown, the
+API returns a validation error: "Valid address with coordinates required."
+
+Each address is stored internally as an AddressLeg object:
+  {
+    addr:     "123 High Street, London, E1 1AA"  — display text
+    street:   "123 High Street"                   — street portion
+    city:     "London"                            — city
+    postcode: "E1 1AA"                            — postcode
+    lat:      51.5123                             — latitude (required)
+    long:     -0.0678                             — longitude (required)
+    stairs:   0                                   — number of flights of stairs
+  }
+
+The address detail (the full AddressLeg object) is encoded as base64url JSON
+and used as the suggestion ID. This means the full address data round-trips
+through URLs and API responses without needing a database lookup.
+
+------------------------------------------------------------------------
+STEP 2 — Move Details (/move/2)
+------------------------------------------------------------------------
+When the user clicks Next from Step 1, the app immediately calls POST /api/quotes
+with the addresses. This is the first time distance is calculated (see Section 2
+for how). The response comes back with:
+  - journey.durationMinutes  — estimated driving time
+  - journey.distanceKm       — route distance
+  - minHours                 — minimum booking hours based on journey time
+  - minPrice                 — cheapest possible price shown as a teaser
+
+On Step 2 the user selects:
+  - Van size: Small (0) / Medium (1) / Large (2) / Luton (3)
+  - Number of hours (min 5, max 17.5, in 0.5 increments)
+  - Helpers: none / driver helps / driver + 1 / driver + 2
+  - Move date (must be today or future)
+  - Move time
+
+The hours dropdown shows the journey estimate from the API and suggests the
+user adds loading/unloading time on top. The minimum enforced hours = the
+suggested hours from the route calculation (cannot book fewer hours than the
+journey actually takes).
+
+------------------------------------------------------------------------
+STEP 3 — Contact Info (/move/3)
+------------------------------------------------------------------------
+The user enters their name, email, phone number, and an optional message.
+This step does NOT call the API until the user clicks "Get free quotes."
+
+NOTE: This step is labelled "About you" in the progress bar but the URL is
+/move/3. On the real quickmanandvan.co.uk, step 3 is where drivers/quotes
+appear. In this codebase the steps are slightly different — quotes appear at
+/move/4 (step 4 in the wizard).
+
+------------------------------------------------------------------------
+STEP 4 — Quotes + Book (/move/4)
+------------------------------------------------------------------------
+When the user clicks "Get free quotes" on Step 3, POST /api/quotes is called
+again with all the data including contact details. The response includes the
+list of providers with their calculated prices.
+
+The user sees a card for each available provider showing:
+  - Company name
+  - Star rating
+  - Number of reviews
+  - Route info (distance + estimated drive time)
+  - Total price in GBP
+  - "Book now" button
+
+When the user clicks "Book now" on a specific provider, the app:
+  1. Calls POST /api/bookings  → creates a PENDING booking in the database
+  2. Calls POST /api/stripe/checkout  → creates a Stripe Checkout Session
+  3. Redirects the user to the Stripe-hosted payment page
+
+After successful payment, Stripe sends a webhook to POST /api/webhooks/stripe
+which:
+  - Verifies the webhook signature (tamper protection)
+  - Verifies the paid amount matches the stored booking price within £0.02
+  - Updates the booking status from PENDING to CONFIRMED
+  - Sends a confirmation email to the customer via Resend
+
+
+================================================================================
+SECTION 2: HOW DISTANCE IS CALCULATED
+================================================================================
+
+The distance calculation is the foundation of everything — it determines how
+long the job will take, which sets the minimum hours, which sets the price.
+
+------------------------------------------------------------------------
+TWO GEO PROVIDERS (switched via GEO_PROVIDER environment variable)
+------------------------------------------------------------------------
+
+--- FREE MODE (default, used in development) ---
+
+Address autocomplete: Photon API (photon.komoot.io)
+  - A free, open-source geocoding service
+  - No API key required
+  - Searches UK addresses, returns lat/long coordinates
+  - Limited accuracy for partial postcodes, works fine for street-level
+
+Route calculation: OSRM (router.project-osrm.org)
+  - Open Source Routing Machine — a free road routing engine
+  - No API key required
+  - Takes two coordinates (lon,lat;lon,lat) and returns:
+      * distance in metres
+      * duration in seconds
+  - For a multi-stop journey (collection → stop1 → stop2 → delivery),
+    the app calls OSRM once per consecutive pair of addresses in parallel,
+    then adds up all the distances and durations.
+  - BOTH of these have "TODO: Replace with production API" comments in the
+    code because they are not reliable enough for real traffic.
+
+--- GOOGLE MODE (for production) ---
+
+Address autocomplete: Google Places Autocomplete API
+  - User types → Places Autocomplete → list of predictions with place_id
+  - For each prediction, a second call to Places Details API fetches the
+    exact lat/long, street number, postcode, city
+  - Requires NEXT_PUBLIC_GOOGLE_MAPS_API_KEY (client-side)
+    and GOOGLE_MAPS_SERVER_API_KEY (server-side)
+
+Route calculation: Google Distance Matrix API
+  - Same leg-by-leg approach as OSRM
+  - More accurate UK routing, handles traffic
+  - Returns distance (metres) and duration (seconds) per leg
+  - Requires GOOGLE_MAPS_SERVER_API_KEY
+
+--- FALLBACK (when routing fails) ---
+
+If either OSRM or Google Distance Matrix returns an error, the app falls
+back to Haversine calculation:
+  - Haversine = straight-line distance between two GPS coordinates
+  - Assumes average speed of 45 km/h
+  - Formula: durationMinutes = (distanceKm / 45) * 60
+  - This is less accurate (ignores roads, traffic, actual route)
+  - Shown as source: "haversine" in the journey object
+
+------------------------------------------------------------------------
+JOURNEY CACHING
+------------------------------------------------------------------------
+Once a route is calculated, the result is stored in an in-memory Map for
+10 minutes with a max of 250 entries. The cache key is:
+  provider:lat1,lon1|lat2,lon2|...
+
+This means if the same route is requested again within 10 minutes (e.g.
+user refreshes or goes back and forward), it returns immediately without
+hitting the external API.
+
+Important limitation: this cache lives in the Next.js server process memory.
+In production with multiple server instances (e.g. on Vercel), each instance
+has its own cache — there is no shared Redis cache for journey results.
+
+
+================================================================================
+SECTION 3: HOW HOURS ARE CALCULATED FROM DISTANCE
+================================================================================
+
+File: src/lib/pricing.ts — function suggestedHours()
+
+Formula:
+  1. Convert durationMinutes to hours: travelHours = durationMinutes / 60
+  2. Add 30 minutes buffer: travelHours + 0.5
+  3. Round UP to the nearest 0.5 hour increment
+  4. Clamp between minimum 5 hours and maximum 17.5 hours
+
+Example:
+  - Route takes 45 minutes driving
+  - travelHours = 45/60 = 0.75 hours
+  - Add buffer: 0.75 + 0.5 = 1.25 hours
+  - Round up to 0.5: 1.5 hours
+  - But minimum is 5 hours → enforced minimum = 5 hours
+
+Example 2:
+  - Route takes 3 hours 20 minutes driving
+  - travelHours = 200/60 = 3.33 hours
+  - Add buffer: 3.33 + 0.5 = 3.83 hours
+  - Round up to 0.5: 4.0 hours
+  - But minimum is 5 hours → enforced minimum = 5 hours
+
+Example 3:
+  - Route takes 5 hours driving (long-distance)
+  - travelHours = 300/60 = 5.0 hours
+  - Add buffer: 5.0 + 0.5 = 5.5 hours
+  - Round up to 0.5: 5.5 hours
+  - Within range → suggested = 5.5 hours
+
+The hours the user selects cannot go BELOW this suggested minimum. If they
+try to submit with fewer hours than the route requires, the booking API
+enforces the minimum anyway: enforcedHours = Math.max(data.hours, minHours)
+
+
+================================================================================
+SECTION 4: HOW PRICING IS CALCULATED
+================================================================================
+
+File: src/lib/pricing.ts
+
+------------------------------------------------------------------------
+BASE HOURLY RATES BY VAN TYPE
+------------------------------------------------------------------------
+  Van Type 0 (Small van):   £25 / hour
+  Van Type 1 (Medium van):  £35 / hour
+  Van Type 2 (Large van):   £45 / hour
+  Van Type 3 (Luton van):   £55 / hour
+
+------------------------------------------------------------------------
+PROVIDERS (CURRENTLY HARDCODED — THIS IS THE FAKE PART)
+------------------------------------------------------------------------
+There are 4 hardcoded "providers" with adjustments applied to the base rate:
+
+  id: "swift"    name: "Swift Man and Van"    hourlyAdjust: -3   maxVan: 3
+  id: "capital"  name: "Capital Move Team"    hourlyAdjust:  0   maxVan: 3
+  id: "metro"    name: "Metro Van Services"   hourlyAdjust: +4   maxVan: 2
+  id: "prime"    name: "Prime Luton Moves"    hourlyAdjust: +8   maxVan: 3
+
+The "vanMax" field means Metro Van Services only appears for Small, Medium,
+or Large vans (0-2) — they don't have a Luton van.
+
+The "hourlyAdjust" is added to the base rate:
+  Swift + Medium van: (£35 - £3) = £32/hour (cheapest)
+  Capital + Medium van: (£35 + £0) = £35/hour
+  Metro + Medium van: (£35 + £4) = £39/hour
+  Prime + Medium van: (£35 + £8) = £43/hour (most expensive)
+
+There is a floor: hourlyRate = Math.max(20, baseRate + adjustment)
+So even with a big negative adjustment, no provider can charge less than £20/hr.
+
+The ratings and review counts are also hardcoded fake numbers:
+  Swift: 4.9 stars, 214 reviews
+  Capital: 4.8 stars, 168 reviews
+  Metro: 4.7 stars, 119 reviews
+  Prime: 4.9 stars, 87 reviews
+
+------------------------------------------------------------------------
+HELPER COSTS
+------------------------------------------------------------------------
+  0 helpers (no help):           £0/hour extra
+  1 helper (driver helping):     £0/hour extra  ← driver is included, no charge
+  2 helpers (driver + 1 extra):  £12/hour extra
+  3 helpers (driver + 2 extra):  £24/hour extra
+
+Helper cost is per hour, multiplied by total booking hours.
+
+------------------------------------------------------------------------
+STAIRS COST
+------------------------------------------------------------------------
+  £5 per flight of stairs at each address
+
+The user selects number of stairs at the collection address and delivery
+address. Stop points don't currently have a stairs field.
+
+Total stair cost = (collection stairs + delivery stairs) × £5
+
+------------------------------------------------------------------------
+STOP COST
+------------------------------------------------------------------------
+  £10 per intermediate stop
+
+If the route has 2 stops between collection and delivery, that adds £20.
+
+------------------------------------------------------------------------
+FULL PRICE FORMULA
+------------------------------------------------------------------------
+
+  basePrice   = hourlyRate × hours
+  helperCost  = helperRate × hours
+  stairCost   = totalFlights × £5
+  stopCost    = numberOfStops × £10
+
+  TOTAL = basePrice + helperCost + stairCost + stopCost
+
+Example calculation:
+  - Route: London E1 to London SW1, 2 stops
+  - Journey: 40 minutes driving → suggestedHours = 5 (minimum)
+  - Van: Luton (type 3) → base rate £55/hr
+  - Provider: Swift → adjust -3 → £52/hr
+  - Hours: 5
+  - Helpers: 2 (driver + 1 extra) → £12/hr
+  - Stairs: 2 flights at collection, 1 at delivery = 3 total
+  - Stops: 2
+
+  basePrice  = £52 × 5 = £260
+  helperCost = £12 × 5 = £60
+  stairCost  = 3 × £5  = £15
+  stopCost   = 2 × £10 = £20
+
+  TOTAL = £260 + £60 + £15 + £20 = £355
+
+------------------------------------------------------------------------
+PRICE DRIFT PROTECTION AT CHECKOUT
+------------------------------------------------------------------------
+When the user reaches Stripe checkout, the server re-derives the minimum
+possible price from the stored booking fields using recomputeBookingPrice().
+If the recalculated price differs from the stored price by more than 1%,
+checkout is rejected. This prevents:
+  - A customer copying a booking token from a stale session
+  - Rate changes between quote and payment
+  - Any tampering with the price in transit
+
+
+================================================================================
+SECTION 5: THE BOOKING-TO-PAYMENT FLOW IN DETAIL
+================================================================================
+
+------------------------------------------------------------------------
+1. POST /api/quotes (called twice — at Step 1→2 and at Step 3→4)
+------------------------------------------------------------------------
+INPUT:  collection, stops, delivery addresses + vantype + hours + helpers +
+        date + time + submitter type
+
+SERVER:
+  a. Validates all fields with Zod schema (addressLegSchema requires finite
+     lat/long — rejects freetyped addresses)
+  b. Calls getJourneySummary() to get distanceKm and durationMinutes
+  c. Calculates suggestedHours from durationMinutes
+  d. For each provider where provider.vanMax >= requested vantype:
+       - Computes hourly rate = base rate + provider adjustment (min £20)
+       - Calculates full price breakdown
+  e. Returns quotes sorted cheapest first, plus minHours and minPrice
+
+OUTPUT: { journey, minHours, minPrice, quotes: DriverQuote[] }
+
+NO DATABASE WRITE — this is purely a calculation.
+
+------------------------------------------------------------------------
+2. POST /api/bookings (when user clicks "Book now" on a provider)
+------------------------------------------------------------------------
+INPUT:  everything from quoteRequestSchema + clientname + clientemail +
+        clientphone + message + selectedQuoteId
+
+SERVER:
+  a. Validates full input (createBookingSchema)
+  b. Re-runs computeQuotes() to get fresh minHours (cannot be cheated)
+  c. Enforces minimum hours: enforcedHours = max(userHours, minHours)
+  d. Runs computeQuotes() again with enforced hours
+  e. Finds the selected provider quote (or picks cheapest if none specified)
+  f. Duplicate check: if a PENDING booking exists for same email+phone+
+     addresses+date within last 10 minutes, returns that booking instead
+     of creating a new one (idempotency guard)
+  g. Creates a Booking in the database with status=PENDING and a random
+     UUID as checkoutToken
+  h. Returns { bookingId, checkoutToken, price }
+
+DATABASE WRITE — creates 1 row in the Booking table.
+
+------------------------------------------------------------------------
+3. POST /api/stripe/checkout
+------------------------------------------------------------------------
+INPUT:  { bookingId, checkoutToken }
+
+SERVER:
+  a. Validates input (checkoutBodySchema — bookingToken must be a UUID)
+  b. Looks up the booking in the database
+  c. Verifies booking.status === "PENDING" (rejects if already paid)
+  d. Verifies booking.checkoutToken matches the submitted token (prevents
+     unauthorised checkout creation for someone else's booking)
+  e. If booking already has a stripeSessionId, retrieves that session from
+     Stripe — if it's still "open", returns the existing URL (idempotent)
+  f. Re-derives minimum price using recomputeBookingPrice()
+  g. Rejects if stored price < minimum price × 0.99 (>1% drift)
+  h. Creates a Stripe Checkout Session with:
+       - line_item: "Man and Van Booking" for booking.price in GBP
+       - success_url: /move/success?session_id={CHECKOUT_SESSION_ID}
+       - cancel_url: /move/4 (back to quotes)
+       - metadata: { bookingId }
+  i. Stores the stripeSessionId on the booking
+  j. Returns { url: stripeCheckoutUrl }
+
+NO new database rows — updates existing Booking.stripeSessionId
+
+------------------------------------------------------------------------
+4. POST /api/webhooks/stripe (called by Stripe after payment)
+------------------------------------------------------------------------
+INPUT:  Raw Stripe webhook event body + Stripe-Signature header
+
+SERVER:
+  a. Reads raw body (not parsed JSON — needed for signature verification)
+  b. Verifies signature with STRIPE_WEBHOOK_SECRET
+  c. Only processes event type "checkout.session.completed"
+  d. Extracts metadata.bookingId from the event
+  e. Looks up booking, verifies it's still PENDING
+  f. Gets the PaymentIntent to find the actual captured amount
+  g. Verifies: |capturedAmount - storedPrice| <= £0.02
+  h. Updates booking status to CONFIRMED, stores stripePaymentId
+  i. Sends confirmation email to contactEmail via Resend
+
+DATABASE WRITE — updates Booking.status and Booking.stripePaymentId
+
+------------------------------------------------------------------------
+5. /move/success
+------------------------------------------------------------------------
+The success page the user lands on after Stripe redirects back.
+It receives ?session_id=... from Stripe but currently just shows a
+confirmation message. The actual confirmation was already processed by
+the webhook in step 4.
+
+
+================================================================================
+SECTION 6: WHAT IS REAL VS WHAT IS FAKE/HARDCODED TODAY
+================================================================================
+
+REAL (working correctly):
+  [x] Address autocomplete via Photon (free) or Google Places
+  [x] Route distance/duration via OSRM (free) or Google Distance Matrix
+  [x] Haversine fallback when routing APIs fail
+  [x] Journey caching (10 min in-memory)
+  [x] Price calculation formula (hours × rate + helpers + stairs + stops)
+  [x] Minimum hours enforcement
+  [x] Zod validation on all API inputs
+  [x] CORS protection (origin check vs NEXT_PUBLIC_BASE_URL)
+  [x] Rate limiting via Upstash Redis (when configured)
+  [x] Booking creation in PostgreSQL via Prisma
+  [x] Duplicate booking detection (10 min window)
+  [x] Stripe Checkout Session creation
+  [x] Stripe webhook verification and signature check
+  [x] Price drift check at checkout (>1% rejected)
+  [x] Amount verification at webhook (within £0.02)
+  [x] Booking status transitions: PENDING → CONFIRMED
+  [x] Confirmation email via Resend
+
+FAKE / HARDCODED (must be replaced for a real platform):
+  [ ] Provider names — "Swift Man and Van" etc. do not exist, they are made up
+  [ ] Provider ratings — 4.9, 4.8, 4.7 are invented numbers
+  [ ] Provider review counts — 214, 168, 119, 87 are invented numbers
+  [ ] Provider hourly adjustments — the -3, 0, +4, +8 are made-up differentials
+  [ ] No real driver exists in the system — there is no Driver database table
+  [ ] The date/time picker does NOT check actual driver availability
+      (drivers do not set availability, nothing is checked against a calendar)
+  [ ] Bookings are not assigned to a specific driver after confirmation
+  [ ] Drivers receive no notification when a booking is made
+  [ ] The OSRM routing API (free tier, not suitable for production load)
+  [ ] The Photon geocoding API (free tier, not suitable for production load)
+
+MISSING FEATURES (not built yet):
+  [ ] Admin panel (no auth, no admin routes)
+  [ ] Driver registration and onboarding
+  [ ] Driver dashboard (view jobs, manage availability)
+  [ ] Customer accounts / login
+  [ ] Real ratings collected from customers post-move
+  [ ] Refund handling
+  [ ] Cancellation flow
+
+
+================================================================================
+SECTION 7: DATA MODEL (PRISMA SCHEMA)
+================================================================================
+
+Current tables:
+
+  Customer
+    id          — cuid (primary key)
+    email       — unique
+    name        — optional
+    phone       — optional
+    createdAt, updatedAt
+    bookings    — relation to Booking[]
+
+  Booking
+    id                  — cuid (primary key)
+    customerId          — optional FK to Customer (NOT LINKED in current flow)
+    collectionAddress   — full address string
+    collectionPostcode  — postcode only
+    collectionStairs    — integer
+    deliveryAddress     — full address string
+    deliveryPostcode    — postcode only
+    deliveryStairs      — integer
+    stops               — JSON (array of stop addresses)
+    moveDate            — DateTime (UTC)
+    vanSize             — string ("Small van", "Medium van", etc.)
+    helpers             — integer (0-3)
+    price               — Float (total price in GBP)
+    bookedHours         — Float (hours booked)
+    bookedVanType       — integer (0-3, for price recomputation)
+    stripePaymentId     — string (set after webhook)
+    stripeSessionId     — string (set after checkout session created)
+    checkoutToken       — UUID (one-time token for checkout security)
+    status              — enum: PENDING | CONFIRMED | COMPLETED | CANCELLED
+    contactEmail        — customer email
+    contactName         — customer name
+    contactPhone        — customer phone
+    createdAt, updatedAt
+    customer            — relation to Customer
+
+  BookingStatus enum: PENDING, CONFIRMED, COMPLETED, CANCELLED
+
+NOTE: customerId is never populated in the current booking flow. The Customer
+table exists in the schema but nothing creates Customer records or links them
+to bookings. This is identified in the admin blueprint as "useful soon."
+
+MISSING TABLES (need to be added):
+  - Driver (the real driver who does the job)
+  - Provider (the company — currently hardcoded in pricing.ts)
+  - PricingRule (van rates, helper rates, stairs rate — currently hardcoded)
+  - AdminUser (for the admin panel)
+  - AuditLog (accountability for admin actions)
+  - BookingNote (internal support notes)
+  - DriverAvailability (which dates a driver is free)
+
+
+================================================================================
+SECTION 8: SECURITY MEASURES ALREADY IN PLACE
+================================================================================
+
+  1. CORS — all /api/* routes check Origin header against NEXT_PUBLIC_BASE_URL
+     or NEXTAUTH_URL. Cross-origin requests get 403 Forbidden.
+
+  2. Rate limiting — Upstash Redis sliding window:
+       /api/quotes:   60 requests per 60 seconds per IP
+       /api/addresses: 30 requests per 60 seconds per IP
+       /api/bookings:  10 requests per 60 seconds per IP
+       /api/stripe/*:  10 requests per 60 seconds per IP
+
+  3. Request size limit — rejectOversizedJsonRequest() blocks requests
+     larger than a configurable max (prevents oversized JSON attacks)
+
+  4. Zod validation — every API input is validated with strict schemas.
+     Lat/long must be finite numbers (not null, not NaN, not Infinity).
+     Addresses must have coordinates from the autocomplete system.
+
+  5. checkoutToken — a UUID stored on the booking at creation time.
+     Checkout can only be initiated by someone who has this token.
+     This prevents one user from initiating payment on another user's booking.
+
+  6. Price drift check — recomputeBookingPrice() re-derives the minimum
+     price at checkout time. Rejects if stored price is more than 1% below
+     the computed minimum. Prevents expired/manipulated quotes.
+
+  7. Stripe webhook signature — uses stripe.webhooks.constructEvent() with
+     STRIPE_WEBHOOK_SECRET to verify the request genuinely came from Stripe.
+
+  8. Payment amount verification — webhook handler checks captured amount
+     matches stored price within £0.02, preventing underpayment scenarios.
+
+  9. Status guard — booking must be PENDING at checkout time. CONFIRMED
+     bookings cannot have another checkout session created.
+
+
+================================================================================
+SECTION 9: ENVIRONMENT VARIABLES REFERENCE
+================================================================================
+
+Required for basic operation:
+  DATABASE_URL                  — PostgreSQL connection string (Prisma)
+
+Geo services:
+  GEO_PROVIDER                  — "free" (default) or "google"
+  GOOGLE_MAPS_SERVER_API_KEY    — required if GEO_PROVIDER=google
+  NEXT_PUBLIC_GOOGLE_MAPS_API_KEY — required if GEO_PROVIDER=google (client)
+
+Payments:
+  STRIPE_SECRET_KEY             — Stripe secret key (sk_live_... or sk_test_...)
+  STRIPE_PUBLISHABLE_KEY        — Stripe publishable key (pk_...)
+  STRIPE_WEBHOOK_SECRET         — Stripe webhook signing secret (whsec_...)
+
+Email:
+  RESEND_API_KEY                — Resend email service API key
+  RESEND_FROM_EMAIL             — Sender address (e.g. noreply@yourdomain.com)
+
+Rate limiting (optional — silently skipped if missing):
+  UPSTASH_REDIS_REST_URL        — Upstash Redis REST endpoint
+  UPSTASH_REDIS_REST_TOKEN      — Upstash Redis auth token
+
+URLs:
+  NEXT_PUBLIC_BASE_URL          — Production domain (e.g. https://yourdomain.com)
+                                  Must NOT contain "localhost" in production
+                                  Used for CORS checks and Stripe return URLs
+  NEXTAUTH_SECRET               — Random secret for NextAuth (even if not using
+                                  OAuth, used as CORS fallback)
+  NEXTAUTH_URL                  — Base URL for NextAuth (same as BASE_URL usually)
+
+
+================================================================================
+SECTION 10: ROADMAP — TURNING THIS INTO A REAL PLATFORM
+================================================================================
+
+The roadmap is split into 4 phases. Each phase must be completed before the
+next because they build on each other's foundations.
+
+------------------------------------------------------------------------
+PHASE 1 — FOUNDATION: Admin Auth + Providers in Database
+------------------------------------------------------------------------
+Priority: CRITICAL. Everything else depends on this.
+Estimated complexity: Medium
+
+WHY FIRST:
+  - You cannot safely expose admin functionality without authentication
+  - Provider data being hardcoded means any pricing change requires a
+    code deploy. Moving it to the database is the single highest-value
+    structural change.
+
+TASKS:
+
+  1.1 Admin Authentication
+      - Add NextAuth with a simple credential provider
+      - Admin credentials stored as env vars: ADMIN_EMAIL, ADMIN_PASSWORD_HASH
+      - No OAuth needed to start (can be added later)
+      - Protected /admin layout that checks session server-side using
+        Next.js middleware or per-page getServerSession()
+      - /admin/login page
+
+  1.2 Provider Model in Prisma
+      Add a Provider table:
+        id              — cuid
+        companyName     — string
+        hourlyAdjust    — float (the + or - applied to base rate)
+        maxVanType      — integer (0-3, what van sizes they serve)
+        active          — boolean (can be deactivated without deletion)
+        rating          — float (display rating, manually set for now)
+        reviewCount     — integer (display count, manually set for now)
+        createdAt, updatedAt
+
+      Migration: seed with the 4 current hardcoded providers so nothing
+      breaks during the transition.
+
+  1.3 Pricing Rules in Prisma (or env config)
+      Move the hardcoded rates out of pricing.ts into either:
+        Option A: Database table PricingRule { vanType, hourlyRate }
+        Option B: Environment variables (simpler, less flexible)
+      Recommendation: DB table so admin can adjust without code deploy.
+
+  1.4 Update computeQuotes() to read from database
+      Instead of the hardcoded PROVIDERS array, query:
+        SELECT * FROM Provider WHERE active = true AND maxVanType >= :vantype
+      Cache results in memory for a few minutes to avoid a DB query on
+      every quote request.
+
+  1.5 Admin: Provider Management UI
+      - /admin/providers — list all providers
+      - /admin/providers/new — create provider form
+      - /admin/providers/[id] — edit provider (rates, active status)
+      - All changes write to database and are audited
+
+  1.6 Admin: Booking List (read-only to start)
+      - /admin/bookings — table of all bookings
+      - Searchable by email, phone, postcode, booking ID
+      - Filterable by status, move date range
+      - /admin/bookings/[id] — full booking detail
+
+  1.7 Audit Log Table
+      Every admin action (edit, status change) writes a row:
+        actor, action, resourceType, resourceId, before (JSON), after (JSON),
+        timestamp, ipAddress
+      Admin can view but not edit the audit log.
+
+DELIVERABLE: Admin can log in, view all bookings, and manage which
+providers are active and what their rates are — without touching code.
+
+------------------------------------------------------------------------
+PHASE 2 — FULL ADMIN PANEL
+------------------------------------------------------------------------
+Priority: HIGH
+Estimated complexity: Medium
+
+TASKS:
+
+  2.1 Booking Management (write operations)
+      - Edit customer contact details (name, email, phone) with audit log
+      - Change booking status (PENDING → CANCELLED, etc.) with confirmation
+        dialog and audit log
+      - Add internal notes to a booking (new BookingNote table)
+
+  2.2 Payment Diagnostics
+      - /admin/payments — list bookings with Stripe session/payment IDs
+      - Link to Stripe Dashboard for each booking
+      - Show paid/unpaid/pending status
+      - Flag bookings where webhook hasn't fired (PENDING + old stripeSessionId)
+
+  2.3 Customer View
+      - /admin/customers — list all customers
+      - /admin/customers/[id] — customer profile + all their bookings
+      Note: currently no Customer records are created. The booking flow
+      must be updated to create/link Customer records at booking creation.
+
+  2.4 Service Health Page
+      - /admin/health — read-only dashboard showing:
+          DB: connected / error
+          Stripe: configured (sk_live_... found) / not configured
+          Stripe webhook: configured / not configured
+          Resend: configured / not configured
+          Redis: configured / not configured
+          Geo provider: "google" or "photon (free)"
+      - NEVER show actual key values — only "configured" or "not configured"
+
+  2.5 CSV Export
+      - Export bookings filtered by date range and status
+      - Admin-only permission
+      - Include: booking ID, status, move date, customer contact, addresses,
+        price, van size, helpers, created date
+
+  2.6 Audit Log Viewer
+      - /admin/audit-log — chronological list of all admin actions
+      - Filterable by actor, action type, booking ID, date
+
+DELIVERABLE: Full operational visibility into bookings, payments, customers.
+Admins can handle common support issues without touching the database directly.
+
+------------------------------------------------------------------------
+PHASE 3 — DRIVER SIDE (The Real Marketplace)
+------------------------------------------------------------------------
+Priority: HIGH (transforms the platform from fake to real)
+Estimated complexity: HIGH
+
+This is the biggest change. It adds an entirely new user type (drivers)
+and changes how bookings work fundamentally.
+
+TASKS:
+
+  3.1 Driver Model in Prisma
+      Add Driver table:
+        id                  — cuid
+        email               — unique
+        name                — string
+        phone               — string
+        vanTypes            — integer[] or JSON (which van sizes they have)
+        serviceRadius       — integer (km from base location)
+        baseLat, baseLong   — their operating base location
+        active              — boolean (admin can disable)
+        verifiedAt          — DateTime (admin approval date)
+        status              — enum: PENDING | APPROVED | SUSPENDED
+        stripeConnectId     — string (for payouts — Phase 4)
+        rating              — float (calculated from reviews)
+        reviewCount         — integer
+        createdAt, updatedAt
+
+  3.2 Link Drivers to Providers
+      Either:
+        Option A: Driver IS the provider — each driver has their own company
+                  name and rates. Remove the separate Provider table.
+        Option B: Provider is a company, Driver works for a Provider.
+                  Multiple drivers can be under one provider company.
+      Recommendation: Option B if you want a company-style marketplace
+      (like the real site). Option A if you want individual freelancers.
+
+  3.3 Driver Registration Flow
+      - Public route: /driver/register
+      - Form: name, email, phone, van types they own, postcode/base area,
+        upload proof of insurance and licence (Phase 3 can use a simple
+        form submission, file upload can be Phase 4)
+      - Creates a Driver record with status=PENDING
+      - Sends admin notification email
+      - Admin approves/rejects in /admin/drivers
+
+  3.4 Admin: Driver Management
+      - /admin/drivers — list with status filter
+      - /admin/drivers/[id] — view application, approve/suspend
+      - Approval sends the driver a welcome email with login details
+
+  3.5 Driver Availability
+      Add DriverAvailability table:
+        driverId    — FK to Driver
+        date        — Date
+        available   — boolean
+        startTime   — Time (e.g. 08:00)
+        endTime     — Time (e.g. 18:00)
+
+      Driver dashboard: calendar view where they mark which days they're free.
+      Quote calculation: only show providers who have an available driver on
+      the selected move date.
+
+  3.6 Driver Dashboard
+      Protected routes at /driver (with driver-specific auth):
+        /driver — overview (upcoming jobs, earnings summary)
+        /driver/jobs — list of assigned bookings
+        /driver/jobs/[id] — booking detail
+        /driver/availability — calendar to set availability
+        /driver/profile — edit their profile and contact details
+
+  3.7 Job Assignment
+      When a booking is confirmed (webhook fires), instead of just updating
+      status, the system also:
+        Option A (simple): auto-assign the selected provider's driver who
+                           has availability on that date
+        Option B (marketplace): notify all eligible drivers, first one to
+                                 accept gets the job
+      Recommendation: Option A first (simpler), Option B later.
+
+      Add assignedDriverId FK to Booking table.
+
+  3.8 Driver Notification
+      When a booking is confirmed and assigned:
+        - Email the driver with job details (date, time, addresses, van size,
+          helpers needed, customer phone number)
+        - Customer also gets updated confirmation email with driver details
+
+DELIVERABLE: Real drivers register, get approved, set their availability,
+receive job assignments, and have a dashboard to view their work.
+The quotes page shows real providers with real availability.
+
+------------------------------------------------------------------------
+PHASE 4 — MARKETPLACE MATURITY
+------------------------------------------------------------------------
+Priority: MEDIUM (nice-to-have for v1, essential for growth)
+Estimated complexity: HIGH
+
+TASKS:
+
+  4.1 Stripe Connect (Driver Payouts)
+      Currently all money goes to your Stripe account. To pay drivers:
+        - Each driver creates a Stripe Connect account linked to yours
+        - Checkout Sessions created as "destination charges":
+            charge to customer → your platform fee deducted → remainder
+            sent to driver's Connect account automatically
+        - Requires changing how Stripe Checkout Sessions are created
+        - Requires the driver to complete Stripe's onboarding (ID check etc.)
+      Note: this is the most technically complex change in the whole roadmap.
+
+  4.2 Post-Move Review System
+      After a booking is marked COMPLETED:
+        - Send customer an email with a review link
+        - Review form: star rating (1-5) + optional text
+        - Reviews stored in a Review table linked to Booking and Driver
+        - Driver's rating = weighted average of all their reviews
+        - Reviews replace the hardcoded rating/reviewCount on quotes page
+
+  4.3 Real Driver Photos and Profiles
+      - Drivers upload a profile photo during registration
+      - Photo stored in S3/Cloudflare R2
+      - Shown on the quotes page alongside name and rating
+      - Short bio field on driver profile
+
+  4.4 Driver Acceptance/Rejection Workflow
+      Upgrade from auto-assign to marketplace model:
+        - Booking confirmed → notification sent to eligible drivers
+        - Each driver has 30 minutes to accept or decline
+        - First to accept gets the job
+        - If nobody accepts in time, admin is notified
+        - Customer can also be notified if assignment is delayed
+
+  4.5 Customer Accounts
+      - Customer can create an account (email + password)
+      - Logged-in customers see their booking history
+      - Pre-filled details on repeat bookings
+      - Can track booking status in real time
+
+  4.6 Production Geo Services
+      - Replace Photon with a production geocoding service
+        (Google Places is already supported, just needs the API key)
+      - Replace public OSRM endpoint with either:
+          * Self-hosted OSRM instance (most control)
+          * HERE Routing API
+          * Google Distance Matrix (already supported)
+      - Both have TODO comments in the code marking them as not production-ready
+
+  4.7 Shared Journey Cache
+      Move the in-memory journey cache to Redis (Upstash is already configured
+      for rate limiting). This ensures all server instances share the same
+      cache, reducing external API calls in production.
+
+DELIVERABLE: A fully functioning two-sided marketplace. Drivers earn money,
+you earn a platform fee, customers leave real reviews, ratings are real.
+
+
+================================================================================
+SECTION 11: RECOMMENDED BUILD ORDER SUMMARY
+================================================================================
+
+Start here → Phase 1.1: Admin auth (NextAuth credential provider)
+             Phase 1.2: Provider table in Prisma + seed migration
+             Phase 1.3: Pricing rules in Prisma
+             Phase 1.4: Update computeQuotes() to query DB
+             Phase 1.5: Admin provider management UI
+             Phase 1.6: Admin booking list (read-only)
+             Phase 1.7: Audit log
+
+Then → Phase 2: Full admin CRUD (booking edits, payment diagnostics,
+                customer view, health page, CSV export)
+
+Then → Phase 3: Driver side (registration → approval → availability →
+                assignment → dashboard → notifications)
+
+Then → Phase 4: Stripe Connect payouts, real reviews, customer accounts,
+                production geo APIs, driver acceptance workflow
+
+FIRST THING TO ACTUALLY BUILD: Phase 1.1 (admin auth) and Phase 1.2
+(Provider DB table). These two together unlock everything that follows.
+You cannot safely build any admin UI without auth, and you cannot properly
+manage drivers and rates without providers being in the database.
+
+================================================================================
+END OF DOCUMENT
+================================================================================

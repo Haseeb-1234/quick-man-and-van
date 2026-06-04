@@ -6,27 +6,41 @@ import { NextResponse, type NextRequest } from "next/server"
 // CORS
 // ---------------------------------------------------------------------------
 
-function getAllowedOrigin(): string {
-  return (
-    process.env.NEXT_PUBLIC_BASE_URL ??
-    process.env.NEXTAUTH_URL ??
-    "http://localhost:3000"
+function getAllowedOrigins(request: NextRequest): Set<string> {
+  const forwardedProto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim()
+  const proto = forwardedProto || request.nextUrl.protocol.replace(":", "")
+  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host")
+  const requestOrigin = host ? `${proto}://${host}` : null
+
+  return new Set(
+    [
+      request.nextUrl.origin,
+      requestOrigin,
+      process.env.NEXT_PUBLIC_BASE_URL,
+      process.env.NEXTAUTH_URL,
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "http://localhost:3002",
+      "http://127.0.0.1:3000",
+      "http://127.0.0.1:3001",
+      "http://127.0.0.1:3002",
+    ].filter((origin): origin is string => Boolean(origin)),
   )
 }
 
 function handleCors(request: NextRequest, response: NextResponse): NextResponse {
   const origin = request.headers.get("origin")
-  const allowed = getAllowedOrigin()
+  const allowedOrigins = getAllowedOrigins(request)
 
-  if (origin && origin !== allowed) {
+  if (origin && !allowedOrigins.has(origin)) {
     // Reject cross-origin requests to /api/* from unlisted origins
     if (request.nextUrl.pathname.startsWith("/api/")) {
-      return new NextResponse(null, { status: 403 })
+      return NextResponse.json({ error: "origin_not_allowed" }, { status: 403 })
     }
   }
 
-  if (origin === allowed) {
-    response.headers.set("Access-Control-Allow-Origin", allowed)
+  if (origin && allowedOrigins.has(origin)) {
+    response.headers.set("Access-Control-Allow-Origin", origin)
     response.headers.set("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
     response.headers.set("Access-Control-Allow-Headers", "Content-Type")
     response.headers.set("Vary", "Origin")
@@ -99,7 +113,7 @@ export async function middleware(request: NextRequest) {
 
   const limiter = getRatelimiter(rule.max)
   if (!limiter) {
-    // Redis not configured — skip limiting (development / initial deploy)
+    // Redis not configured: keep the customer funnel available.
     return NextResponse.next()
   }
 
@@ -121,3 +135,4 @@ export const config = {
   // Run on all /api/* routes for CORS + on rate-limited routes
   matcher: ["/api/:path*"],
 }
+

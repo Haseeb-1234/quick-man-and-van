@@ -1,5 +1,6 @@
 "use client"
 
+import { emptyAddressLeg } from "@/types/quote"
 import type { AddressLeg } from "@/types/quote"
 import { useCallback, useEffect, useId, useRef, useState } from "react"
 
@@ -26,15 +27,6 @@ const stairsOptions = [
   { value: 9, label: "are 8+ flights of stairs" },
 ]
 
-export const emptyAddressLeg = (): AddressLeg => ({
-  addr: "",
-  street: "",
-  city: "",
-  postcode: "",
-  lat: null,
-  long: null,
-  stairs: 0,
-})
 
 export function AddressBlock({ title, searchLabel, leg, onChange, compact = false }: Props) {
   const baseId = useId()
@@ -129,14 +121,14 @@ export function AddressBlock({ title, searchLabel, leg, onChange, compact = fals
               setOpen(true)
             }}
             onFocus={() => setOpen(true)}
-            className="w-full rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] px-3 py-3 pr-10 text-base text-[#F1F5F9] outline-none placeholder:text-[#4B5563] focus:border-[#F59E0B] focus:ring-2 focus:ring-[rgba(245,158,11,0.15)]"
+            className="w-full rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] p-3 pr-10 text-base text-[#F1F5F9] outline-none placeholder:text-[#4B5563] focus:border-[#F59E0B] focus:ring-2 focus:ring-[rgba(245,158,11,0.15)]"
           />
           {leg.addr ? (
             <button
               type="button"
               aria-label="Clear address"
               onClick={clear}
-              className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded text-[#94A3B8] hover:bg-[#223040] hover:text-[#F59E0B]"
+              className="absolute right-2 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded text-[#94A3B8] hover:bg-[#223040] hover:text-[#F59E0B]"
             >
               x
             </button>
@@ -158,7 +150,7 @@ export function AddressBlock({ title, searchLabel, leg, onChange, compact = fals
             ))}
           </ul>
         ) : null}
-        {loading ? <p className="mt-1 text-xs text-[#94A3B8]">Searching addresses...</p> : null}
+        {loading ? <p className="mt-1 text-xs text-[#94A3B8]">Searching addresses…</p> : null}
       </div>
 
       {!compact ? (
@@ -171,7 +163,7 @@ export function AddressBlock({ title, searchLabel, leg, onChange, compact = fals
               id={`${baseId}-stairs`}
               value={leg.stairs}
               onChange={(e) => onChange({ ...leg, stairs: Number(e.target.value) })}
-              className="w-full rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] px-3 py-3 text-base text-[#F1F5F9] outline-none [color-scheme:dark] focus:border-[#F59E0B] focus:ring-2 focus:ring-[rgba(245,158,11,0.15)]"
+              className="w-full rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] p-3 text-base text-[#F1F5F9] outline-none [color-scheme:dark] focus:border-[#F59E0B] focus:ring-2 focus:ring-[rgba(245,158,11,0.15)]"
             >
               {stairsOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -200,7 +192,7 @@ function ReadonlyField({ label, value }: { label: string; value: string }) {
         value={value}
         placeholder="Search address above"
         readOnly
-        className="mt-1 w-full rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.04)] px-3 py-3 text-base text-[#94A3B8] placeholder:text-[#4B5563]"
+        className="mt-1 w-full rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.04)] p-3 text-base text-[#94A3B8] placeholder:text-[#4B5563]"
       />
     </label>
   )

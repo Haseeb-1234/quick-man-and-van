@@ -6,14 +6,15 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "doctor": "npx react-doctor@latest"
   },
   "dependencies": {
-    "@auth/prisma-adapter": "^2.11.2",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.0",
+    "autoskills": "^0.3.6",
     "dotenv": "^17.4.2",
     "next": "^15.5.18",
     "next-auth": "^4.24.14",
@@ -33,6 +34,8 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
+    "playwright": "^1.60.0",
+    "react-doctor": "^0.2.10",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

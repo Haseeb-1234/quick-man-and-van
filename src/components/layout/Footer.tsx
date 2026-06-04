@@ -77,7 +77,7 @@ export function Footer() {
             </ul>
           </div>
         </div>
-        <p className="mt-10 border-t border-[rgba(255,255,255,0.07)] pt-8 text-center text-[13px] text-[#4B5563]">
+        <p className="mt-10 border-t border-[rgba(255,255,255,0.07)] pt-8 text-center text-[13px] text-[#4B5563]" suppressHydrationWarning>
           © {new Date().getFullYear()} {SITE_NAME}. All rights reserved.
         </p>
       </div>

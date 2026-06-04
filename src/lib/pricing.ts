@@ -89,11 +89,11 @@ export async function computeQuotes(input: QuoteRequest): Promise<{
   const minHours = suggestedHours(journey.durationMinutes)
   const normalized: QuoteRequest = { ...input, hours: input.hours || minHours }
 
-  const quotes = PROVIDERS.filter((provider) => provider.vanMax >= input.vantype)
-    .map((provider) => {
+  const quotes = PROVIDERS.reduce<DriverQuote[]>((acc, provider) => {
+    if (provider.vanMax >= input.vantype) {
       const hourlyRate = Math.max(20, HOURLY_RATES[input.vantype] + provider.hourlyAdjust)
       const priced = calculatePrice(normalized, hourlyRate)
-      return {
+      acc.push({
         id: provider.id,
         companyName: provider.companyName,
         vehicleType: VAN_LABELS[input.vantype],
@@ -102,9 +102,10 @@ export async function computeQuotes(input: QuoteRequest): Promise<{
         coverageInfo: `${journey.distanceKm.toFixed(1)} km route • ${formatDuration(journey.durationMinutes)} estimated drive`,
         price: priced.price,
         breakdown: priced.breakdown,
-      }
-    })
-    .sort((a, b) => a.price - b.price)
+      })
+    }
+    return acc
+  }, []).sort((a, b) => a.price - b.price)
 
   const minPreviewInput: QuoteRequest = { ...input, hours: minHours, helpers: 1, vantype: 0 }
   const minPrice = calculatePrice(minPreviewInput, HOURLY_RATES[0]).price

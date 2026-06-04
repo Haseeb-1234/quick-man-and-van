@@ -42,3 +42,14 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+# Claude Code / AI tooling
+.claude/
+.agents/
+skills-lock.json
+
+# screenshots / temp files
+*.png
+*.jpg
+*.jpeg
+booking-test.js

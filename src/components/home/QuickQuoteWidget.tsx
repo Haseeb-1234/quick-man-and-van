@@ -1,15 +1,16 @@
 "use client"
 
-import { AddressBlock, emptyAddressLeg } from "@/components/quote/AddressBlock"
+import { AddressBlock } from "@/components/quote/AddressBlock"
 import { Button } from "@/components/ui/Button"
+import { emptyAddressLeg } from "@/types/quote"
 import type { AddressLeg } from "@/types/quote"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 
 export function QuickQuoteWidget() {
   const router = useRouter()
-  const [collection, setCollection] = useState<AddressLeg>(emptyAddressLeg())
-  const [delivery, setDelivery] = useState<AddressLeg>(emptyAddressLeg())
+  const [collection, setCollection] = useState<AddressLeg>(() => emptyAddressLeg())
+  const [delivery, setDelivery] = useState<AddressLeg>(() => emptyAddressLeg())
   const [homeStairs, setHomeStairs] = useState(false)
   const [homeStops, setHomeStops] = useState(false)
   const [error, setError] = useState("")
@@ -56,12 +57,12 @@ export function QuickQuoteWidget() {
       {error ? <p className="mt-3 text-sm text-red-200">{error}</p> : null}
 
       <Button type="button" className="btn-primary mt-5 w-full rounded py-3 uppercase" onClick={submit}>
-        Submit
+        Get quotes
       </Button>
 
       <div className="mt-5 flex items-end justify-between gap-4 text-xs text-[#94A3B8]">
         <p>Discounts can be applied on next pages.</p>
-        <a href="https://www.reviews.io/company-reviews/store/quickmanandvan-co-uk" target="_blank" className="text-right text-[#F1F5F9]">
+        <a href="https://www.reviews.io/company-reviews/store/quickmanandvan-co-uk" target="_blank" rel="noreferrer" className="text-right text-[#F1F5F9]">
           <span className="block text-amber-300">★★★★★</span>
           on Reviews.io
         </a>

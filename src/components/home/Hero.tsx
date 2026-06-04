@@ -30,19 +30,19 @@ export function Hero() {
           </div>
           <ul className="mt-10 flex flex-wrap gap-x-6 gap-y-2 text-sm text-[#94A3B8]">
             <li className="flex items-center gap-2">
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[rgba(245,158,11,0.12)] text-[#F59E0B]" aria-hidden>
+              <span className="flex size-5 items-center justify-center rounded-full bg-[rgba(245,158,11,0.12)] text-[#F59E0B]" aria-hidden>
                 ✓
               </span>
               Up to 3 stop points
             </li>
             <li className="flex items-center gap-2">
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[rgba(245,158,11,0.12)] text-[#F59E0B]" aria-hidden>
+              <span className="flex size-5 items-center justify-center rounded-full bg-[rgba(245,158,11,0.12)] text-[#F59E0B]" aria-hidden>
                 ✓
               </span>
               Stairs &amp; access options
             </li>
             <li className="flex items-center gap-2">
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[rgba(245,158,11,0.12)] text-[#F59E0B]" aria-hidden>
+              <span className="flex size-5 items-center justify-center rounded-full bg-[rgba(245,158,11,0.12)] text-[#F59E0B]" aria-hidden>
                 ✓
               </span>
               Secure card payment
