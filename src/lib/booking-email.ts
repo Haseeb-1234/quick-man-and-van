@@ -18,7 +18,7 @@ export async function sendBookingConfirmationEmail(booking: Booking): Promise<bo
   const html = `
     <h1>Booking confirmed</h1>
     <p>Hi${booking.contactName ? ` ${escapeHtml(booking.contactName)}` : ""},</p>
-    <p>Thanks for booking with Quick Man and Van. Your reference is <strong>${short}</strong>.</p>
+    <p>Thanks for booking with Man and Van. Your reference is <strong>${short}</strong>.</p>
     <ul>
       <li><strong>Collect:</strong> ${escapeHtml(booking.collectionAddress)} (${escapeHtml(booking.collectionPostcode)}) — stairs: ${booking.collectionStairs}</li>
       ${stops}

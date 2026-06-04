@@ -7,5 +7,5 @@ export function getResend(): Resend | null {
 }
 
 export function bookingFromEmail(): string {
-  return process.env.RESEND_FROM_EMAIL ?? "Quick Man and Van <onboarding@resend.dev>"
+  return process.env.RESEND_FROM_EMAIL ?? "Man and Van <onboarding@resend.dev>"
 }

@@ -1,4 +1,4 @@
-export const SITE_NAME = "Quick Man and Van"
+export const SITE_NAME = "Man and Van"
 
 export const SITE_DESCRIPTION =
   "UK man and van bookings — instant quotes, trusted movers, nationwide coverage."

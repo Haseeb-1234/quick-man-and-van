@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 
 export const metadata: Metadata = {
   title: "Privacy & cookies",
-  description: "Privacy policy and cookie information for Quick Man and Van.",
+  description: "Privacy policy and cookie information for Man and Van.",
 }
 
 export default function PrivacyPage() {

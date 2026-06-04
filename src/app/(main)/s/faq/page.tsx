@@ -3,7 +3,7 @@ import Link from "next/link"
 
 export const metadata: Metadata = {
   title: "FAQ",
-  description: "Frequently asked questions about man and van bookings with Quick Man and Van.",
+  description: "Frequently asked questions about man and van bookings with Man and Van.",
 }
 
 export default function FaqPage() {
