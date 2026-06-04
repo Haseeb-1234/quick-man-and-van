@@ -34,8 +34,8 @@ export function Footer() {
                 </a>
               </li>
               <li>
-                <a href={`tel:${CONTACT.phoneTel2}`} className="text-[#F59E0B] transition duration-150 hover:text-[#FBBF24]">
-                  {CONTACT.phoneDisplay2}
+                <a href={`mailto:${CONTACT.email}`} className="text-[#F59E0B] transition duration-150 hover:text-[#FBBF24]">
+                  {CONTACT.email}
                 </a>
               </li>
               <li>

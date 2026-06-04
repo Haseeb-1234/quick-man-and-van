@@ -24,9 +24,13 @@ export default function ContactPage() {
             <a href={`tel:${CONTACT.phoneTel1}`} className="font-medium text-[#F59E0B] transition duration-150 hover:text-[#FBBF24]">
               {CONTACT.phoneDisplay1}
             </a>
-            <span className="mx-2 text-[#4B5563]">·</span>
-            <a href={`tel:${CONTACT.phoneTel2}`} className="font-medium text-[#F59E0B] transition duration-150 hover:text-[#FBBF24]">
-              {CONTACT.phoneDisplay2}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-sm font-medium text-[#94A3B8]">Email</dt>
+          <dd className="mt-1">
+            <a href={`mailto:${CONTACT.email}`} className="font-medium text-[#F59E0B] transition duration-150 hover:text-[#FBBF24]">
+              {CONTACT.email}
             </a>
           </dd>
         </div>

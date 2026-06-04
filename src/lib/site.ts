@@ -5,14 +5,13 @@ export const SITE_DESCRIPTION =
 
 export const BRAND_PRIMARY = "#3fb6ee"
 
-export const WHATSAPP_URL = "https://wa.me/447479976677"
+export const WHATSAPP_URL = "https://wa.me/443038097452"
 
 export const CONTACT = {
   hoursLabel: "Mon–Sat 08:00–19:00",
-  phoneDisplay1: "+44 7479 976 677",
-  phoneTel1: "+447479976677",
-  phoneDisplay2: "+44 199 267 7586",
-  phoneTel2: "+441992677586",
+  phoneDisplay1: "0303 809 7452",
+  phoneTel1: "03038097452",
+  email: "manvan639@gmail.com",
 } as const
 
 export const SERVICE_CITIES = [
