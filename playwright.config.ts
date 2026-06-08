@@ -9,7 +9,7 @@ export default defineConfig({
     baseURL: "https://laxamigroupsltd.com",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
-    headless: false, // keep visible so you can watch the flow
+    headless: !process.env.PWDEBUG, // set PWDEBUG=1 locally to watch the browser
   },
   projects: [
     {

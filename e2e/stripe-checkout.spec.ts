@@ -1,4 +1,3 @@
-
 import { test, expect, type Page } from "playwright/test"
 
 // Real London coordinates so the routing API returns a valid journey.
@@ -36,7 +35,7 @@ async function mockAddressAutocomplete(page: Page) {
       body: JSON.stringify({
         suggestions: [
           {
-            id: `mock-${term.slice(0, 8)}`,
+            id: `mock-${address === DELIVERY ? "delivery" : "collection"}`,
             address: address.addr,
             mainText: address.street,
             secondaryText: `${address.city} ${address.postcode}`,
@@ -55,14 +54,13 @@ test("full booking flow reaches Stripe checkout", async ({ page }) => {
   // ── Step 1: Route ────────────────────────────────────────────────────────
   await page.goto("/move/1")
 
-  // Collection address
-  const addressInputs = page.getByPlaceholder("Start typing, then select address")
-  await addressInputs.first().fill("Victoria Street")
+  // Collection address — use label selector for reliability
+  await page.getByLabel("Search collection address").fill("Victoria Street")
   await page.waitForSelector("button:has-text('1 Victoria Street')", { timeout: 8000 })
   await page.locator("button", { hasText: "1 Victoria Street" }).first().click()
 
-  // Delivery address
-  await addressInputs.last().fill("Baker Street")
+  // Delivery address — label selector avoids fragile .last() on the placeholder
+  await page.getByLabel("Search delivery address").fill("Baker Street")
   await page.waitForSelector("button:has-text('221B Baker Street')", { timeout: 8000 })
   await page.locator("button", { hasText: "221B Baker Street" }).first().click()
 
@@ -77,8 +75,10 @@ test("full booking flow reaches Stripe checkout", async ({ page }) => {
   // ── Step 3: Contact info ─────────────────────────────────────────────────
   await page.waitForURL("**/move/3", { timeout: 20000 })
 
-  await page.getByLabel("Your name").fill("Test User")
-  await page.getByLabel("Your email").fill("test@example.com")
+  // Prefix with "test+e2e" so these bookings are easy to identify and
+  // clean up in the admin panel — each real test run creates a PENDING booking.
+  await page.getByLabel("Your name").fill("Test User (e2e)")
+  await page.getByLabel("Your email").fill("test+e2e@example.com")
   await page.getByLabel("Your phone number").fill("07700900000")
 
   await page.getByRole("button", { name: "Get free quotes" }).click()
@@ -90,7 +90,7 @@ test("full booking flow reaches Stripe checkout", async ({ page }) => {
   const bookButtons = page.getByRole("button", { name: "Book now" })
   await expect(bookButtons.first()).toBeVisible({ timeout: 10000 })
 
-  const quotePrice = page.locator("article").first().locator("text=/£[0-9]+\\.[0-9]{2}/")
+  const quotePrice = page.locator("article p").filter({ hasText: /£\d+\.\d{2}/ }).first()
   await expect(quotePrice).toBeVisible()
   console.log("Quote price found — proceeding to checkout")
 
@@ -106,8 +106,9 @@ test("full booking flow reaches Stripe checkout", async ({ page }) => {
   console.log("✅ Stripe checkout URL:", finalUrl)
 
   expect(finalUrl).toContain("checkout.stripe.com")
-  // The URL should be for your live Stripe account (not test mode).
-  expect(finalUrl).not.toContain("livemode=false")
+  // cs_live_ prefix confirms live Stripe keys are active (not test mode).
+  // If this fails, check STRIPE_SECRET_KEY in Vercel env vars.
+  expect(finalUrl).toMatch(/\/c\/pay\/cs_live_/)
 })
 
 test("homepage loads and Get a Quote CTA is visible", async ({ page }) => {
