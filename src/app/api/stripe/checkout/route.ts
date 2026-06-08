@@ -49,7 +49,7 @@ export async function POST(req: Request) {
 
   // Re-validate stored price against current pricing rules before charging
   if (booking.bookedHours != null && booking.bookedVanType != null) {
-    const recomputed = recomputeBookingPrice(booking)
+    const recomputed = await recomputeBookingPrice(booking)
     const priceDrift = Math.abs(recomputed - booking.price) / booking.price
     if (priceDrift > 0.01) {
       console.error("Price drift at checkout", { stored: booking.price, recomputed, bookingId: booking.id })

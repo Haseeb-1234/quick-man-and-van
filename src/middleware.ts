@@ -1,5 +1,6 @@
 import { Ratelimit } from "@upstash/ratelimit"
 import { Redis } from "@upstash/redis"
+import { getToken } from "next-auth/jwt"
 import { NextResponse, type NextRequest } from "next/server"
 
 // ---------------------------------------------------------------------------
@@ -95,6 +96,16 @@ function getRatelimiter(max: number): Ratelimit | null {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // Protect /admin/* — redirect to login if no valid session
+  if (pathname.startsWith("/admin") && !pathname.startsWith("/admin/login")) {
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET })
+    if (!token) {
+      const loginUrl = new URL("/admin/login", request.url)
+      loginUrl.searchParams.set("callbackUrl", pathname)
+      return NextResponse.redirect(loginUrl)
+    }
+  }
+
   // Handle CORS preflight before any other logic
   if (request.method === "OPTIONS") {
     const preflight = new NextResponse(null, { status: 204 })
@@ -132,7 +143,6 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Run on all /api/* routes for CORS + on rate-limited routes
-  matcher: ["/api/:path*"],
+  matcher: ["/api/:path*", "/admin/:path*"],
 }
 

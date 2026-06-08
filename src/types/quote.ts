@@ -11,6 +11,7 @@ export type AddressLeg = {
   stairs: number
 }
 
+
 export function emptyAddressLeg(): AddressLeg {
   return { addr: "", street: "", city: "", postcode: "", lat: null, long: null, stairs: 0 }
 }

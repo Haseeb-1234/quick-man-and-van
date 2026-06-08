@@ -9,3 +9,7 @@ export function getResend(): Resend | null {
 export function bookingFromEmail(): string {
   return process.env.RESEND_FROM_EMAIL ?? "Man and Van <onboarding@resend.dev>"
 }
+
+export function adminEmail(): string {
+  return process.env.ADMIN_EMAIL ?? "sibtainsafdar47@gmail.com"
+}

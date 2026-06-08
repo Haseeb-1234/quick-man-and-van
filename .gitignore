@@ -45,8 +45,13 @@ next-env.d.ts
 
 # Claude Code / AI tooling
 .claude/
+.claude-flow/
 .agents/
 skills-lock.json
+.mcp.json
+
+# Scratch files
+a.price
 
 # screenshots / temp files
 *.png

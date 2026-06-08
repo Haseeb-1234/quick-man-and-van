@@ -1,11 +1,10 @@
-import { bookingFromEmail, getResend } from "@/lib/resend"
+import { adminEmail, bookingFromEmail, getResend } from "@/lib/resend"
 import type { Booking } from "@prisma/client"
 
 export async function sendBookingConfirmationEmail(booking: Booking): Promise<boolean> {
   const resend = getResend()
   if (!resend || !booking.contactEmail) return false
 
-  const to = booking.contactEmail
   const short = booking.id.slice(0, 8).toUpperCase()
 
   const stops =
@@ -15,7 +14,7 @@ export async function sendBookingConfirmationEmail(booking: Booking): Promise<bo
           .join("")
       : ""
 
-  const html = `
+  const customerHtml = `
     <h1>Booking confirmed</h1>
     <p>Hi${booking.contactName ? ` ${escapeHtml(booking.contactName)}` : ""},</p>
     <p>Thanks for booking with Man and Van. Your reference is <strong>${short}</strong>.</p>
@@ -30,13 +29,39 @@ export async function sendBookingConfirmationEmail(booking: Booking): Promise<bo
     <p>If anything looks wrong, reply to this email or WhatsApp us from the website.</p>
   `
 
+  const adminHtml = `
+    <h1>New booking received — ${short}</h1>
+    <ul>
+      <li><strong>Customer:</strong> ${escapeHtml(booking.contactName ?? "N/A")}</li>
+      <li><strong>Email:</strong> ${escapeHtml(booking.contactEmail)}</li>
+      <li><strong>Phone:</strong> ${escapeHtml(booking.contactPhone ?? "N/A")}</li>
+      <li><strong>Collect:</strong> ${escapeHtml(booking.collectionAddress)} (${escapeHtml(booking.collectionPostcode)}) — stairs: ${booking.collectionStairs}</li>
+      ${stops}
+      <li><strong>Deliver:</strong> ${escapeHtml(booking.deliveryAddress)} (${escapeHtml(booking.deliveryPostcode)}) — stairs: ${booking.deliveryStairs}</li>
+      <li><strong>Move date:</strong> ${escapeHtml(booking.moveDate.toISOString())}</li>
+      <li><strong>Van:</strong> ${escapeHtml(booking.vanSize)} — helpers: ${booking.helpers}</li>
+      <li><strong>Total paid:</strong> £${booking.price.toFixed(2)}</li>
+      <li><strong>Booking ID:</strong> ${booking.id}</li>
+    </ul>
+  `
+
+  const from = bookingFromEmail()
+
   try {
-    await resend.emails.send({
-      from: bookingFromEmail(),
-      to,
-      subject: `Your move is confirmed — ${short}`,
-      html,
-    })
+    await Promise.all([
+      resend.emails.send({
+        from,
+        to: booking.contactEmail,
+        subject: `Your move is confirmed — ${short}`,
+        html: customerHtml,
+      }),
+      resend.emails.send({
+        from,
+        to: adminEmail(),
+        subject: `New booking — ${short} (£${booking.price.toFixed(2)})`,
+        html: adminHtml,
+      }),
+    ])
     return true
   } catch (e) {
     console.error("Resend error", e)

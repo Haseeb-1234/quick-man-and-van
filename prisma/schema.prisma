@@ -50,3 +50,21 @@ enum BookingStatus {
   COMPLETED
   CANCELLED
 }
+
+model PricingSettings {
+  id            String   @id @default("singleton")
+  companyName   String   @default("Man and Van")
+  rating        Float    @default(4.9)
+  reviewCount   Int      @default(0)
+  smallVanRate  Float    @default(25)
+  mediumVanRate Float    @default(35)
+  largeVanRate  Float    @default(45)
+  lutonVanRate  Float    @default(55)
+  helper2Rate   Float    @default(12)
+  helper3Rate   Float    @default(24)
+  stairRate     Float    @default(5)
+  stopRate      Float    @default(10)
+  minHours      Float    @default(5)
+  maxHours      Float    @default(17.5)
+  updatedAt     DateTime @updatedAt
+}
