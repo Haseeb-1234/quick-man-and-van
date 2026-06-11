@@ -1,48 +1,61 @@
+import { ContactForm } from "./ContactForm"
 import { CONTACT, WHATSAPP_URL } from "@/lib/site"
+import Link from "next/link"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
   title: "Contact",
-  description: "Reach Man and Van — phone, WhatsApp, and opening hours.",
+  description: "Reach Man and Van — phone, WhatsApp, email, or send us a message.",
 }
 
 export default function ContactPage() {
   return (
-    <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6 sm:py-24">
-      <h1 className="font-display text-3xl font-bold tracking-tight text-[#F1F5F9]">Contact us</h1>
-      <p className="mt-4 text-lg text-[#94A3B8]">
-        We&apos;re here Mon–Sat. The contact form with spam protection will be added in Phase 3.
+    <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-24">
+      <h1 className="font-display text-4xl font-bold tracking-tight text-primary">Contact us</h1>
+      <p className="mt-3 text-lg text-secondary">
+        Got a question or need help with your move? Send us a message and we&apos;ll get back to you.
       </p>
-      <dl className="surface-card mt-10 space-y-6 rounded-2xl p-6">
-        <div>
-          <dt className="text-sm font-medium text-[#94A3B8]">Hours</dt>
-          <dd className="mt-1 text-[#F1F5F9]">{CONTACT.hoursLabel}</dd>
+
+      <div className="mt-12 grid gap-12 lg:grid-cols-2">
+
+        <ContactForm />
+
+        <div className="space-y-6">
+          <div className="surface-card rounded-2xl p-6 space-y-6">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-secondary">Hours</p>
+              <p className="mt-1 font-medium text-primary">{CONTACT.hoursLabel}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-secondary">Phone</p>
+              <a href={`tel:${CONTACT.phoneTel1}`} className="mt-1 block font-medium text-accent hover:text-accent-hover transition duration-150">
+                {CONTACT.phoneDisplay1}
+              </a>
+            </div>
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-secondary">Email</p>
+              <a href={`mailto:${CONTACT.email}`} className="mt-1 block font-medium text-accent hover:text-accent-hover transition duration-150">
+                {CONTACT.email}
+              </a>
+            </div>
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-secondary">WhatsApp</p>
+              <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="mt-1 block font-medium text-accent hover:text-accent-hover transition duration-150">
+                Message us on WhatsApp
+              </a>
+            </div>
+          </div>
+
+          <div className="rounded-xl bg-accent/8 p-5">
+            <p className="text-sm font-semibold text-primary">Need an instant quote?</p>
+            <p className="mt-1 text-sm text-secondary">Get a price in under a minute — no account needed.</p>
+            <Link href="/move" className="mt-3 inline-block rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-hover transition duration-150">
+              Get free quotes
+            </Link>
+          </div>
         </div>
-        <div>
-          <dt className="text-sm font-medium text-[#94A3B8]">Phone</dt>
-          <dd className="mt-1">
-            <a href={`tel:${CONTACT.phoneTel1}`} className="font-medium text-[#F59E0B] transition duration-150 hover:text-[#FBBF24]">
-              {CONTACT.phoneDisplay1}
-            </a>
-          </dd>
-        </div>
-        <div>
-          <dt className="text-sm font-medium text-[#94A3B8]">Email</dt>
-          <dd className="mt-1">
-            <a href={`mailto:${CONTACT.email}`} className="font-medium text-[#F59E0B] transition duration-150 hover:text-[#FBBF24]">
-              {CONTACT.email}
-            </a>
-          </dd>
-        </div>
-        <div>
-          <dt className="text-sm font-medium text-[#94A3B8]">WhatsApp</dt>
-          <dd className="mt-1">
-            <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="font-medium text-[#F59E0B] transition duration-150 hover:text-[#FBBF24]">
-              Message us on WhatsApp
-            </a>
-          </dd>
-        </div>
-      </dl>
+
+      </div>
     </div>
   )
 }
