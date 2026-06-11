@@ -15,8 +15,8 @@ const VAN_OPTIONS: { value: VanType; label: string; dimensions: string; payload:
   { value: 3, label: "Luton van", dimensions: "4.1m x 2.0m x 2.2m", payload: "1200-1600kg", seats: 3, image: "/images/vans/van-luton.png" },
 ]
 
-const HELPER_OPTIONS = [
-  { value: 0, label: "No help needed", image: "/images/helpers/helper-1.png" },
+const HELPER_OPTIONS: { value: number; label: string; image: string | null }[] = [
+  { value: 0, label: "No help needed", image: null },
   { value: 1, label: "Driver helping", image: "/images/helpers/helper-1.png" },
   { value: 2, label: "Driver + 1 person helping", image: "/images/helpers/helper-2.png" },
   { value: 3, label: "Driver + 2 people helping", image: "/images/helpers/helper-3.png" },
@@ -343,9 +343,20 @@ export function MoveWizard({ initialStep = 1 }: MoveWizardProps) {
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
                 {HELPER_OPTIONS.map((option) => (
                   <OptionCard key={option.value} selected={helpers === option.value} onClick={() => setHelpers(option.value)}>
-                    <div className="relative mx-auto mb-3 h-20 w-20">
-                      <Image src={option.image} alt={option.label} fill className="object-contain" />
-                    </div>
+                    {option.image ? (
+                      <div className="relative mx-auto mb-3 h-20 w-20">
+                        <Image src={option.image} alt={option.label} fill className="object-contain" />
+                      </div>
+                    ) : (
+                      <div className="mx-auto mb-3 flex h-20 w-20 items-center justify-center rounded-full bg-accent/10">
+                        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-accent" aria-hidden="true">
+                          <path d="M1 3h15v13H1z" />
+                          <path d="M16 8h4l3 4v4h-7V8z" />
+                          <circle cx="5.5" cy="18.5" r="2.5" />
+                          <circle cx="18.5" cy="18.5" r="2.5" />
+                        </svg>
+                      </div>
+                    )}
                     <p className={helpers === option.value ? "font-bold text-accent" : "font-bold text-primary"}>{option.label}</p>
                   </OptionCard>
                 ))}

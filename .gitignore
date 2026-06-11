@@ -58,5 +58,6 @@ a.price
 *.jpg
 *.jpeg
 booking-test.js
-# allow committed assets in public/images
+# allow committed assets
 !public/images/**
+!src/app/icon.png
