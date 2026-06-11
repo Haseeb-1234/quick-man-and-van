@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { useState } from "react"
 import { ButtonLink } from "@/components/ui/Button"
 import { ThemeToggle } from "@/components/ui/ThemeToggle"
@@ -19,9 +20,7 @@ export function Navbar() {
     <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-surface/95 backdrop-blur-sm">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
         <Link href="/" className="flex shrink-0 items-center gap-2 font-semibold tracking-tight text-accent">
-          <span className="flex size-9 items-center justify-center rounded-lg bg-accent text-sm font-bold text-white">
-            Q
-          </span>
+          <Image src="/images/logo-icon.png" alt={SITE_NAME} width={36} height={36} className="rounded-lg" />
           <span className="hidden min-[380px]:inline">{SITE_NAME}</span>
         </Link>
 

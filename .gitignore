@@ -58,3 +58,5 @@ a.price
 *.jpg
 *.jpeg
 booking-test.js
+# allow committed assets in public/images
+!public/images/**

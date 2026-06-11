@@ -3,22 +3,23 @@
 import { AddressBlock } from "@/components/quote/AddressBlock"
 import { Button, ButtonLink } from "@/components/ui/Button"
 import type { AddressLeg, DriverQuote, JourneySummary, QuoteRequest, VanType } from "@/types/quote"
+import Image from "next/image"
 import { emptyAddressLeg } from "@/types/quote"
 import { useSearchParams } from "next/navigation"
 import { useMemo, useState } from "react"
 
-const VAN_OPTIONS: { value: VanType; label: string; dimensions: string; payload: string; seats: number }[] = [
-  { value: 0, label: "Small van", dimensions: "1.7m x 1.49m x 1.2m", payload: "600-800kg", seats: 2 },
-  { value: 1, label: "Medium van", dimensions: "2.4m x 1.7m x 1.4m", payload: "800-1200kg", seats: 3 },
-  { value: 2, label: "Large van", dimensions: "3.4m x 1.7m x 1.8m", payload: "1200-1500kg", seats: 3 },
-  { value: 3, label: "Luton van", dimensions: "4.1m x 2.0m x 2.2m", payload: "1200-1600kg", seats: 3 },
+const VAN_OPTIONS: { value: VanType; label: string; dimensions: string; payload: string; seats: number; image: string }[] = [
+  { value: 0, label: "Small van", dimensions: "1.7m x 1.49m x 1.2m", payload: "600-800kg", seats: 2, image: "/images/vans/van-small.png" },
+  { value: 1, label: "Medium van", dimensions: "2.4m x 1.7m x 1.4m", payload: "800-1200kg", seats: 3, image: "/images/vans/van-medium.png" },
+  { value: 2, label: "Large van", dimensions: "3.4m x 1.7m x 1.8m", payload: "1200-1500kg", seats: 3, image: "/images/vans/van-large.png" },
+  { value: 3, label: "Luton van", dimensions: "4.1m x 2.0m x 2.2m", payload: "1200-1600kg", seats: 3, image: "/images/vans/van-luton.png" },
 ]
 
 const HELPER_OPTIONS = [
-  { value: 0, label: "No help needed", icon: "1" },
-  { value: 1, label: "Driver helping", icon: "1" },
-  { value: 2, label: "Driver + 1 person helping", icon: "2" },
-  { value: 3, label: "Driver + 2 people helping", icon: "3" },
+  { value: 0, label: "No help needed", image: "/images/helpers/helper-1.png" },
+  { value: 1, label: "Driver helping", image: "/images/helpers/helper-1.png" },
+  { value: 2, label: "Driver + 1 person helping", image: "/images/helpers/helper-2.png" },
+  { value: 3, label: "Driver + 2 people helping", image: "/images/helpers/helper-3.png" },
 ]
 
 type QuoteResponse = {
@@ -227,7 +228,7 @@ export function MoveWizard({ initialStep = 1 }: MoveWizardProps) {
 
   return (
     <main className="bg-page text-primary">
-      <section className="bg-[linear-gradient(rgba(15,25,35,.9),rgba(15,25,35,.9)),url('/images/moving-hero.jpg')] bg-cover bg-center text-white">
+      <section className="bg-[linear-gradient(rgba(15,25,35,.9),rgba(15,25,35,.9)),url('/images/hero-bg.png')] bg-cover bg-center text-white">
         <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:py-20">
           <h1 className="font-display text-4xl font-bold text-white sm:text-5xl">Instant Quotes</h1>
           <p className="mt-6 text-2xl font-bold text-white/70">
@@ -302,7 +303,9 @@ export function MoveWizard({ initialStep = 1 }: MoveWizardProps) {
                   <OptionCard key={van.value} selected={vantype === van.value} onClick={() => setVantype(van.value)}>
                     <p className="font-bold text-primary">{van.dimensions}</p>
                     <p className="text-xs text-secondary">(Load space LxWxH)</p>
-                    <div className="my-4 flex h-20 items-center justify-center rounded bg-subtle text-4xl text-accent">▰</div>
+                    <div className="relative my-4 h-20 w-full">
+                      <Image src={van.image} alt={van.label} fill className="object-contain" />
+                    </div>
                     <p className={vantype === van.value ? "font-bold text-accent" : "font-bold text-primary"}>{van.label}</p>
                     <p className="text-xs text-secondary">Payload: {van.payload} • Seats: {van.seats} inc driver</p>
                   </OptionCard>
@@ -340,8 +343,8 @@ export function MoveWizard({ initialStep = 1 }: MoveWizardProps) {
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
                 {HELPER_OPTIONS.map((option) => (
                   <OptionCard key={option.value} selected={helpers === option.value} onClick={() => setHelpers(option.value)}>
-                    <div className="mx-auto mb-3 flex h-16 w-24 items-center justify-center rounded bg-accent/8 text-2xl font-bold text-accent">
-                      {option.icon}
+                    <div className="relative mx-auto mb-3 h-20 w-20">
+                      <Image src={option.image} alt={option.label} fill className="object-contain" />
                     </div>
                     <p className={helpers === option.value ? "font-bold text-accent" : "font-bold text-primary"}>{option.label}</p>
                   </OptionCard>
