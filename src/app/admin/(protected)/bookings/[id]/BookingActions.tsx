@@ -53,6 +53,7 @@ export default function BookingActions({ booking }: Props) {
           {Object.values(BookingStatus).map((s) => (
             <button
               key={s}
+              type="button"
               disabled={saving || s === status}
               onClick={() => {
                 if (window.confirm(`Change status to ${s}?`)) void save({ status: s }).then(() => setStatus(s))
@@ -81,6 +82,7 @@ export default function BookingActions({ booking }: Props) {
             <div key={label} className="flex items-center gap-3">
               <span className="w-16 text-xs text-[#94A3B8]">{label}</span>
               <input
+                aria-label={label}
                 value={value}
                 onChange={(e) => { setter(e.target.value); setSaved(false) }}
                 className="flex-1 rounded border border-[rgba(255,255,255,0.12)] bg-[#0F1923] px-3 py-1.5 text-sm text-white focus:border-[#F59E0B] focus:outline-none"
@@ -90,6 +92,7 @@ export default function BookingActions({ booking }: Props) {
         </div>
         <div className="mt-4 flex items-center gap-3">
           <button
+            type="button"
             disabled={saving}
             onClick={() => void save({ contactName: name, contactEmail: email, contactPhone: phone })}
             className="rounded bg-[#F59E0B] px-4 py-1.5 text-sm font-semibold text-[#0F1923] hover:bg-[#D97706] disabled:opacity-50"

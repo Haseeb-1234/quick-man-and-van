@@ -32,6 +32,7 @@ export default function AdminNav() {
         ))}
       </nav>
       <button
+        type="button"
         onClick={() => void signOut({ callbackUrl: "/admin/login" })}
         className="mt-auto rounded px-3 py-2 text-left text-sm text-[#94A3B8] hover:bg-[rgba(255,255,255,0.05)] hover:text-white"
       >

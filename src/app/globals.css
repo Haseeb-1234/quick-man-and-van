@@ -1,85 +1,133 @@
 @import url("https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=DM+Sans:wght@400;500;600&display=swap");
 @import "tailwindcss";
 
+/* Class-based dark mode: .dark on <html> activates dark: prefix */
+@variant dark (&:where(.dark, .dark *));
+
+/* ── Light mode (default) ──────────────────────────────────────────────── */
 :root {
+  --bg-page: #ffffff;
+  --bg-surface: #f4f4f5;
+  --bg-footer: #e4e4e7;
+  --bg-hover: #e4e4e7;
+  --bg-subtle: rgba(0, 0, 0, 0.03);
+  --accent: #dc2626;
+  --accent-hover: #ef4444;
+  --input-bg: #f9fafb;
+  --input-border: rgba(0, 0, 0, 0.18);
+  --text-primary: #18181b;
+  --text-secondary: #71717a;
+  --text-muted: #a1a1aa;
+  --border: rgba(0, 0, 0, 0.1);
+  --background: #ffffff;
+  --foreground: #18181b;
+  --brand: #dc2626;
+}
+
+/* ── Dark mode (.dark on <html>) ──────────────────────────────────────── */
+.dark {
   --bg-page: #0f1923;
   --bg-surface: #1a2733;
+  --bg-footer: #080f16;
   --bg-hover: #223040;
-  --accent: #f59e0b;
-  --accent-hover: #fbbf24;
-  --accent-dim: #92610a;
+  --bg-subtle: rgba(255, 255, 255, 0.04);
+  --accent: #ef4444;
+  --accent-hover: #f87171;
+  --input-bg: rgba(255, 255, 255, 0.05);
+  --input-border: rgba(255, 255, 255, 0.1);
   --text-primary: #f1f5f9;
   --text-secondary: #94a3b8;
   --text-muted: #4b5563;
   --border: rgba(255, 255, 255, 0.07);
-  --border-accent: rgba(245, 158, 11, 0.3);
   --background: #0f1923;
   --foreground: #f1f5f9;
-  --brand: #f59e0b;
+  --brand: #ef4444;
 }
 
+/* ── Tailwind token mappings ──────────────────────────────────────────── */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-dm-page: #0f1923;
-  --color-dm-surface: #1a2733;
-  --color-dm-accent: #f59e0b;
-  --color-dm-primary: #f1f5f9;
-  --color-dm-secondary: #94a3b8;
+  --color-page: var(--bg-page);
+  --color-surface: var(--bg-surface);
+  --color-footer-bg: var(--bg-footer);
+  --color-hover-bg: var(--bg-hover);
+  --color-subtle: var(--bg-subtle);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-input-bg: var(--input-bg);
+  --color-input-border: var(--input-border);
+  --color-primary: var(--text-primary);
+  --color-secondary: var(--text-secondary);
+  --color-muted: var(--text-muted);
   --font-display: "Barlow Condensed", sans-serif;
   --font-body: "DM Sans", sans-serif;
-  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
-    "Noto Color Emoji";
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+    "Segoe UI Symbol", "Noto Color Emoji";
 }
 
 body {
-  background-color: #0f1923;
-  color: #f1f5f9;
+  background-color: var(--bg-page);
+  color: var(--text-primary);
   font-family: "DM Sans", sans-serif;
 }
 
+/* ── Reusable utility classes ─────────────────────────────────────────── */
 .btn-primary {
-  background: #f59e0b;
-  color: #0f1923;
+  background: var(--accent);
+  color: #ffffff;
   font-weight: 700;
   font-family: "DM Sans", sans-serif;
   letter-spacing: 0.02em;
   transition: all 0.15s ease;
-  box-shadow: 0 0 20px rgba(245, 158, 11, 0.15);
+  box-shadow: 0 0 20px rgba(220, 38, 38, 0.15);
 }
 
 .btn-primary:hover {
-  background: #fbbf24;
-  box-shadow: 0 0 28px rgba(245, 158, 11, 0.3);
+  background: var(--accent-hover);
+  box-shadow: 0 0 28px rgba(220, 38, 38, 0.3);
 }
 
 .btn-secondary {
   background: transparent;
-  border: 1.5px solid #f59e0b;
-  color: #f59e0b;
+  border: 1.5px solid var(--accent);
+  color: var(--accent);
   font-weight: 600;
   transition: all 0.15s ease;
 }
 
 .btn-secondary:hover {
-  background: rgba(245, 158, 11, 0.08);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
 }
 
 .surface-card {
-  background: #1a2733;
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
 }
 
-.text-accent {
-  color: #f59e0b;
+/* Adapts color-scheme for date/time/select inputs */
+.scheme-adaptive {
+  color-scheme: light;
+}
+.dark .scheme-adaptive {
+  color-scheme: dark;
 }
 
-.text-primary-dm {
-  color: #f1f5f9;
+/* Hero section radial glow */
+.hero-bg {
+  background: radial-gradient(ellipse at 30% 50%, color-mix(in srgb, var(--accent) 5%, transparent) 0%, transparent 70%),
+    var(--bg-page);
 }
 
-.text-secondary-dm {
-  color: #94a3b8;
+/* Error banner — adapts to both themes */
+.error-banner {
+  border: 1px solid rgba(220, 38, 38, 0.4);
+  background: rgba(254, 226, 226, 0.8);
+  color: #991b1b;
+}
+.dark .error-banner {
+  background: rgba(127, 29, 29, 0.4);
+  color: #fecaca;
 }
 
 ::-webkit-scrollbar {
@@ -87,10 +135,10 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #0f1923;
+  background: var(--bg-page);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #2d3f50;
+  background: var(--bg-hover);
   border-radius: 3px;
 }

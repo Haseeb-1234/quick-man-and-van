@@ -27,8 +27,16 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en-GB" className="h-full scroll-smooth">
-      <body className="min-h-full bg-[#0F1923] font-sans text-[#F1F5F9] antialiased" suppressHydrationWarning>
+    <html lang="en-GB" className="h-full scroll-smooth" suppressHydrationWarning>
+      <head>
+        {/* Apply saved theme before first paint to avoid flash */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}})()`,
+          }}
+        />
+      </head>
+      <body className="min-h-full bg-page font-sans text-primary antialiased" suppressHydrationWarning>
         <Providers>{children}</Providers>
       </body>
     </html>

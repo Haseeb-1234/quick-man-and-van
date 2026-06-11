@@ -27,8 +27,9 @@ export default function LoginForm({ callbackUrl }: { callbackUrl: string }) {
   return (
     <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
       <div>
-        <label className="mb-1 block text-sm text-[#94A3B8]">Email</label>
+        <label htmlFor="email" className="mb-1 block text-sm text-[#94A3B8]">Email</label>
         <input
+          id="email"
           type="email"
           required
           value={email}
@@ -38,8 +39,9 @@ export default function LoginForm({ callbackUrl }: { callbackUrl: string }) {
         />
       </div>
       <div>
-        <label className="mb-1 block text-sm text-[#94A3B8]">Password</label>
+        <label htmlFor="password" className="mb-1 block text-sm text-[#94A3B8]">Password</label>
         <input
+          id="password"
           type="password"
           required
           value={password}

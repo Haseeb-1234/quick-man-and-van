@@ -3,11 +3,11 @@ import type { ComponentProps } from "react"
 
 const variants = {
   primary:
-    "bg-[#F59E0B] text-[#0F1923] shadow-[0_0_20px_rgba(245,158,11,0.15)] hover:bg-[#FBBF24] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F59E0B]",
+    "bg-accent text-white shadow-[0_0_20px_rgba(220,38,38,0.15)] hover:bg-accent-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
   secondary:
-    "bg-transparent text-[#F59E0B] shadow-sm ring-1 ring-[#F59E0B] hover:bg-[rgba(245,158,11,0.08)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F59E0B]",
+    "bg-transparent text-accent shadow-sm ring-1 ring-accent hover:bg-accent/8 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
   outline:
-    "border border-[#F59E0B] bg-transparent text-[#F59E0B] hover:bg-[rgba(245,158,11,0.08)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F59E0B]",
+    "border border-accent bg-transparent text-accent hover:bg-accent/8 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
 } as const
 
 const base =

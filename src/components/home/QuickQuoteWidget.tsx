@@ -32,38 +32,38 @@ export function QuickQuoteWidget() {
   }
 
   return (
-    <div className="surface-card p-6 text-[#F1F5F9] shadow-[0_4px_24px_rgba(0,0,0,0.5)] sm:p-8">
-      <h2 className="font-display text-3xl font-bold text-[#F1F5F9]">Man and Van Quotes</h2>
-      <p className="mt-2 text-sm leading-6 text-[#94A3B8]">
+    <div className="surface-card p-6 shadow-[0_4px_24px_rgba(0,0,0,0.12)] sm:p-8">
+      <h2 className="font-display text-3xl font-bold text-primary">Man and Van Quotes</h2>
+      <p className="mt-2 text-sm leading-6 text-secondary">
         Get <strong>free quotes</strong> for <strong>Man and Van service</strong> in under a minute. <strong>Book online</strong> and move.
       </p>
 
-      <div className="mt-6 space-y-4 text-[#F1F5F9]">
+      <div className="mt-6 space-y-4">
         <AddressBlock title="Collection" searchLabel="Collection address" leg={collection} onChange={setCollection} compact />
         <AddressBlock title="Delivery" searchLabel="Delivery address" leg={delivery} onChange={setDelivery} compact />
       </div>
 
-      <div className="mt-4 space-y-3 text-sm text-[#F1F5F9]">
+      <div className="mt-4 space-y-3 text-sm text-secondary">
         <label className="flex items-center gap-2">
-          <input type="checkbox" checked={homeStairs} onChange={(e) => setHomeStairs(e.target.checked)} />
+          <input type="checkbox" checked={homeStairs} onChange={(e) => setHomeStairs(e.target.checked)} className="accent-accent" />
           There are stairs at the locations
         </label>
         <label className="flex items-center gap-2">
-          <input type="checkbox" checked={homeStops} onChange={(e) => setHomeStops(e.target.checked)} />
+          <input type="checkbox" checked={homeStops} onChange={(e) => setHomeStops(e.target.checked)} className="accent-accent" />
           I need to define stop points
         </label>
       </div>
 
-      {error ? <p className="mt-3 text-sm text-red-200">{error}</p> : null}
+      {error ? <p className="mt-3 text-sm text-red-600 dark:text-red-300">{error}</p> : null}
 
       <Button type="button" className="btn-primary mt-5 w-full rounded py-3 uppercase" onClick={submit}>
         Get quotes
       </Button>
 
-      <div className="mt-5 flex items-end justify-between gap-4 text-xs text-[#94A3B8]">
+      <div className="mt-5 flex items-end justify-between gap-4 text-xs text-secondary">
         <p>Discounts can be applied on next pages.</p>
-        <a href="https://www.reviews.io/company-reviews/store/quickmanandvan-co-uk" target="_blank" rel="noreferrer" className="text-right text-[#F1F5F9]">
-          <span className="block text-amber-300">★★★★★</span>
+        <a href="https://www.reviews.io/company-reviews/store/quickmanandvan-co-uk" target="_blank" rel="noreferrer" className="text-right text-primary">
+          <span className="block text-accent">★★★★★</span>
           on Reviews.io
         </a>
       </div>

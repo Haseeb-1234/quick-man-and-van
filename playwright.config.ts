@@ -6,7 +6,7 @@ export default defineConfig({
   retries: 0,
   reporter: "list",
   use: {
-    baseURL: "https://laxamigroupsltd.com",
+    baseURL: process.env.BASE_URL ?? "http://localhost:3000",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
     headless: !process.env.PWDEBUG, // set PWDEBUG=1 locally to watch the browser

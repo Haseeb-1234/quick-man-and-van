@@ -3,8 +3,6 @@ export const SITE_NAME = "Man and Van"
 export const SITE_DESCRIPTION =
   "UK man and van bookings — instant quotes, trusted movers, nationwide coverage."
 
-export const BRAND_PRIMARY = "#3fb6ee"
-
 export const WHATSAPP_URL = "https://wa.me/443038097452"
 
 export const CONTACT = {

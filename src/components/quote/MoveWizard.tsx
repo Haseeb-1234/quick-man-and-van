@@ -88,6 +88,7 @@ export function MoveWizard({ initialStep = 1 }: MoveWizardProps) {
   const [collection, setCollection] = useState<AddressLeg>(() => addressFromParams(params, "collect"))
   const [delivery, setDelivery] = useState<AddressLeg>(() => addressFromParams(params, "deliver"))
   const [stops, setStops] = useState<AddressLeg[]>(() => (params.get("home_stops") === "1" ? [emptyAddressLeg()] : []))
+  const [stopKeys, setStopKeys] = useState<string[]>(() => (params.get("home_stops") === "1" ? [crypto.randomUUID()] : []))
   const [vantype, setVantype] = useState<VanType>(1)
   const [hours, setHours] = useState(5)
   const [helpers, setHelpers] = useState(1)
@@ -225,34 +226,37 @@ export function MoveWizard({ initialStep = 1 }: MoveWizardProps) {
   const passengerSpaces = Math.max(0, (VAN_OPTIONS.find((v) => v.value === vantype)?.seats || 3) - Math.max(1, helpers))
 
   return (
-    <main className="bg-[#0F1923] text-[#F1F5F9]">
-      <section className="bg-[linear-gradient(rgba(15,25,35,.9),rgba(15,25,35,.9)),url('/images/moving-hero.jpg')] bg-cover bg-center text-[#F1F5F9]">
+    <main className="bg-page text-primary">
+      <section className="bg-[linear-gradient(rgba(15,25,35,.9),rgba(15,25,35,.9)),url('/images/moving-hero.jpg')] bg-cover bg-center text-white">
         <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:py-20">
-          <h1 className="font-display text-4xl font-bold text-[#F1F5F9] sm:text-5xl">Instant Quotes</h1>
-          <p className="mt-6 text-2xl font-bold text-[#94A3B8]">
+          <h1 className="font-display text-4xl font-bold text-white sm:text-5xl">Instant Quotes</h1>
+          <p className="mt-6 text-2xl font-bold text-white/70">
             {step === 1 ? "What's the moving route?" : step === 2 ? `Your quote could be as little as £${quoteData?.minPrice.toFixed(2) ?? "..."}` : "Last step before your free quotes!"}
           </p>
         </div>
       </section>
 
-      <section className="surface-card mx-auto max-w-5xl px-4 py-10 shadow-[0_4px_24px_rgba(0,0,0,0.5)] sm:px-6">
+      <section className="surface-card mx-auto max-w-5xl px-4 py-10 shadow-[0_4px_24px_rgba(0,0,0,0.12)] sm:px-6">
         <Progress step={step} />
-        {error ? <div className="mb-6 rounded border border-red-400/30 bg-red-950/40 px-4 py-3 text-sm text-red-200">{error}</div> : null}
+        {error ? <div className="error-banner mb-6 rounded px-4 py-3 text-sm">{error}</div> : null}
 
         {step === 1 ? (
           <div className="space-y-6">
-            <p className="text-[#94A3B8]">
+            <p className="text-secondary">
               Start typing in the address search boxes, then select the address from the dropdown box that appears while you type.
             </p>
             <AddressBlock title="Collection address" searchLabel="Search collection address" leg={collection} onChange={setCollection} />
             {stops.map((stop, index) => (
-              <div key={index} className="relative">
+              <div key={stopKeys[index]} className="relative">
                 <button
                   type="button"
-                  onClick={() => setStops((current) => current.filter((_, i) => i !== index))}
+                  onClick={() => {
+                    setStops((current) => current.filter((_, i) => i !== index))
+                    setStopKeys((current) => current.filter((_, i) => i !== index))
+                  }}
                   className="btn-secondary mb-2 rounded px-3 py-1 text-xs font-bold uppercase"
                 >
-                  x Remove stop point
+                  × Remove stop point
                 </button>
                 <AddressBlock
                   title={`Stop point ${index + 1}`}
@@ -264,7 +268,10 @@ export function MoveWizard({ initialStep = 1 }: MoveWizardProps) {
             ))}
             {stops.length < 3 ? (
               <div className="text-center">
-                <Button type="button" className="btn-secondary" onClick={() => setStops((current) => [...current, emptyAddressLeg()])}>
+                <Button type="button" className="btn-secondary" onClick={() => {
+                  setStops((current) => [...current, emptyAddressLeg()])
+                  setStopKeys((current) => [...current, crypto.randomUUID()])
+                }}>
                   Add stop point
                 </Button>
               </div>
@@ -280,41 +287,41 @@ export function MoveWizard({ initialStep = 1 }: MoveWizardProps) {
 
         {step === 2 ? (
           <div className="space-y-10">
-            <p className="text-[#94A3B8]">
+            <p className="text-secondary">
               In order to provide you with the lowest prices for your move, please tell us more about your move. After you fill the
               required information you will instantly receive the lowest available prices for your move.
             </p>
 
             <section>
-              <h2 className="text-2xl font-semibold text-[#F1F5F9]">What van size do you need?</h2>
-              <p className="mt-2 text-sm text-[#94A3B8]">
+              <h2 className="text-2xl font-semibold text-primary">What van size do you need?</h2>
+              <p className="mt-2 text-sm text-secondary">
                 The van size you select must fit all the items you wish to move. The quote is for one trip only.
               </p>
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
                 {VAN_OPTIONS.map((van) => (
                   <OptionCard key={van.value} selected={vantype === van.value} onClick={() => setVantype(van.value)}>
-                    <p className="font-bold text-[#F1F5F9]">{van.dimensions}</p>
-                    <p className="text-xs text-[#94A3B8]">(Load space LxWxH)</p>
-                    <div className="my-4 flex h-20 items-center justify-center rounded bg-[rgba(255,255,255,0.05)] text-4xl text-[#F59E0B]">▰</div>
-                    <p className={vantype === van.value ? "font-bold text-[#F59E0B]" : "font-bold text-[#F1F5F9]"}>{van.label}</p>
-                    <p className="text-xs text-[#94A3B8]">Payload: {van.payload} • Seats: {van.seats} inc driver</p>
+                    <p className="font-bold text-primary">{van.dimensions}</p>
+                    <p className="text-xs text-secondary">(Load space LxWxH)</p>
+                    <div className="my-4 flex h-20 items-center justify-center rounded bg-subtle text-4xl text-accent">▰</div>
+                    <p className={vantype === van.value ? "font-bold text-accent" : "font-bold text-primary"}>{van.label}</p>
+                    <p className="text-xs text-secondary">Payload: {van.payload} • Seats: {van.seats} inc driver</p>
                   </OptionCard>
                 ))}
               </div>
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-[#F1F5F9]">How many hours do you need the van?</h2>
-              <p className="mt-2 text-sm text-[#94A3B8]">
+              <h2 className="text-2xl font-semibold text-primary">How many hours do you need the van?</h2>
+              <p className="mt-2 text-sm text-secondary">
                 We estimate your journey will take {quoteData ? formatDurationClient(quoteData.journey.durationMinutes) : "a few minutes"}.
                 Add loading and unloading time to the journey duration.
               </p>
-              <label className="mt-5 block max-w-md text-[13px] font-medium uppercase tracking-[0.04em] text-[#94A3B8]">
+              <label className="mt-5 block max-w-md text-[13px] font-medium uppercase tracking-[0.04em] text-secondary">
                 I need van for
                 <select
                   value={hours}
                   onChange={(e) => setHours(Number(e.target.value))}
-                  className="mt-1 w-full rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] p-3 font-normal text-[#F1F5F9] [color-scheme:dark] focus:border-[#F59E0B] focus:outline-none focus:ring-2 focus:ring-[rgba(245,158,11,0.15)]"
+                  className="scheme-adaptive mt-1 w-full rounded border border-[var(--input-border)] bg-input-bg p-3 font-normal text-primary focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/15"
                 >
                   {hoursOptions().map((h) => (
                     <option key={h} value={h}>
@@ -326,49 +333,52 @@ export function MoveWizard({ initialStep = 1 }: MoveWizardProps) {
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-[#F1F5F9]">Will you need help loading and unloading your items?</h2>
-              <p className="mt-2 text-sm text-[#94A3B8]">
+              <h2 className="text-2xl font-semibold text-primary">Will you need help loading and unloading your items?</h2>
+              <p className="mt-2 text-sm text-secondary">
                 Our drivers will gladly help loading and unloading, and can bring extra people for large items.
               </p>
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
                 {HELPER_OPTIONS.map((option) => (
                   <OptionCard key={option.value} selected={helpers === option.value} onClick={() => setHelpers(option.value)}>
-                    <div className="mx-auto mb-3 flex h-16 w-24 items-center justify-center rounded bg-[rgba(245,158,11,0.08)] text-2xl font-bold text-[#F59E0B]">
+                    <div className="mx-auto mb-3 flex h-16 w-24 items-center justify-center rounded bg-accent/8 text-2xl font-bold text-accent">
                       {option.icon}
                     </div>
-                    <p className={helpers === option.value ? "font-bold text-[#F59E0B]" : "font-bold text-[#F1F5F9]"}>{option.label}</p>
+                    <p className={helpers === option.value ? "font-bold text-accent" : "font-bold text-primary"}>{option.label}</p>
                   </OptionCard>
                 ))}
               </div>
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold text-[#F1F5F9]">When are you planning to move?</h2>
-              <p className="mt-2 text-sm text-[#94A3B8]">Enter the date and time when you plan to move to check driver availability.</p>
+              <h2 className="text-2xl font-semibold text-primary">When are you planning to move?</h2>
+              <p className="mt-2 text-sm text-secondary">Enter the date and time when you plan to move to check driver availability.</p>
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                <label className="text-[13px] font-medium uppercase tracking-[0.04em] text-[#94A3B8]">
+                <label className="text-[13px] font-medium uppercase tracking-[0.04em] text-secondary">
                   Planning to move on
                   <input
                     type="date"
                     value={ukToIso(date)}
                     onChange={(e) => setDate(isoToUk(e.target.value))}
-                    className="mt-1 w-full rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] p-3 font-normal text-[#F1F5F9] [color-scheme:dark] focus:border-[#F59E0B] focus:outline-none focus:ring-2 focus:ring-[rgba(245,158,11,0.15)]"
+                    className="scheme-adaptive mt-1 w-full rounded border border-[var(--input-border)] bg-input-bg p-3 font-normal text-primary focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/15"
                   />
                 </label>
-                <label className="text-[13px] font-medium uppercase tracking-[0.04em] text-[#94A3B8]">
+                <label className="text-[13px] font-medium uppercase tracking-[0.04em] text-secondary">
                   at
-                  <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="mt-1 w-full rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] p-3 font-normal text-[#F1F5F9] [color-scheme:dark] focus:border-[#F59E0B] focus:outline-none focus:ring-2 focus:ring-[rgba(245,158,11,0.15)]" />
+                  <input
+                    type="time"
+                    value={time}
+                    onChange={(e) => setTime(e.target.value)}
+                    className="scheme-adaptive mt-1 w-full rounded border border-[var(--input-border)] bg-input-bg p-3 font-normal text-primary focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/15"
+                  />
                 </label>
               </div>
-              <p className="mt-5 rounded bg-[rgba(245,158,11,0.08)] px-4 py-3 text-sm text-[#94A3B8]">
+              <p className="mt-5 rounded bg-accent/8 px-4 py-3 text-sm text-secondary">
                 There will be room for {passengerSpaces} passenger{passengerSpaces === 1 ? "" : "s"} to travel in the van free of charge.
               </p>
             </section>
 
             <div className="flex justify-between gap-3">
-              <Button variant="outline" className="btn-secondary" onClick={() => setWizardStep(1)}>
-                Back
-              </Button>
+              <BackButton onClick={() => setWizardStep(1)} />
               <Button onClick={() => void continueFromDetails()} disabled={loading} className="btn-primary uppercase">
                 {loading ? "Checking..." : "Get free quotes"}
               </Button>
@@ -378,30 +388,28 @@ export function MoveWizard({ initialStep = 1 }: MoveWizardProps) {
 
         {step === 3 ? (
           <div className="space-y-8">
-            <p className="text-[#94A3B8]">You are just one click away from your free quotes. Fill the final details and press the submit button.</p>
+            <p className="text-secondary">You are just one click away from your free quotes. Fill the final details and press the submit button.</p>
             <section className="surface-card rounded p-5">
-              <h2 className="text-2xl font-semibold text-[#F1F5F9]">About you</h2>
-              <p className="mt-2 text-sm text-[#94A3B8]">
+              <h2 className="text-2xl font-semibold text-primary">About you</h2>
+              <p className="mt-2 text-sm text-secondary">
                 Your details are required to send you the quotes result. We will not send you spam or share your details.
               </p>
               <div className="mt-5 grid gap-4">
                 <ClearableInput label="Your name" value={clientname} onChange={setClientname} required />
                 <ClearableInput label="Your email" type="email" value={clientemail} onChange={setClientemail} required />
                 <ClearableInput label="Your phone number" type="tel" value={clientphone} onChange={setClientphone} required />
-                <label className="text-[13px] font-medium uppercase tracking-[0.04em] text-[#94A3B8]">
+                <label className="text-[13px] font-medium uppercase tracking-[0.04em] text-secondary">
                   Message
                   <textarea
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    className="mt-1 min-h-24 w-full rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] p-3 font-normal normal-case tracking-normal text-[#F1F5F9] placeholder:text-[#4B5563] focus:border-[#F59E0B] focus:outline-none focus:ring-2 focus:ring-[rgba(245,158,11,0.15)]"
+                    className="mt-1 min-h-24 w-full rounded border border-[var(--input-border)] bg-input-bg p-3 font-normal normal-case tracking-normal text-primary placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/15"
                   />
                 </label>
               </div>
             </section>
             <div className="flex justify-between gap-3">
-              <Button variant="outline" className="btn-secondary" onClick={() => setWizardStep(2)}>
-                Back
-              </Button>
+              <BackButton onClick={() => setWizardStep(2)} />
               <Button onClick={() => void finish()} disabled={loading} className="btn-primary uppercase">
                 {loading ? "Preparing..." : "Get free quotes"}
               </Button>
@@ -411,22 +419,22 @@ export function MoveWizard({ initialStep = 1 }: MoveWizardProps) {
 
         {step === 4 && quoteData ? (
           <div className="space-y-6">
-            <div className="rounded border border-[rgba(245,158,11,0.3)] bg-[rgba(245,158,11,0.08)] px-4 py-3 text-[#F1F5F9]">
+            <div className="rounded border border-accent/30 bg-accent/8 px-4 py-3 text-primary">
               {submitted ? "Your quote request is ready. Choose a provider below to continue to booking." : "Quotes ready."}
             </div>
             <div className="grid gap-4">
               {quoteData.quotes.map((quote) => (
-                <article key={quote.id} className="rounded border border-[rgba(255,255,255,0.07)] bg-[#1A2733] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.4)]">
+                <article key={quote.id} className="rounded border border-[var(--border)] bg-surface p-5 shadow-[0_1px_3px_rgba(0,0,0,0.1)]">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <h2 className="text-xl font-semibold text-[#F1F5F9]">{quote.companyName}</h2>
-                      <p className="text-sm text-[#94A3B8]">{quote.vehicleType}</p>
-                      <p className="mt-1 text-sm text-[#94A3B8]">
+                      <h2 className="text-xl font-semibold text-primary">{quote.companyName}</h2>
+                      <p className="text-sm text-secondary">{quote.vehicleType}</p>
+                      <p className="mt-1 text-sm text-secondary">
                         ★ {quote.rating.toFixed(1)} ({quote.reviewCount} reviews) • {quote.coverageInfo}
                       </p>
                     </div>
                     <div className="text-left sm:text-right">
-                      <p className="font-display text-[32px] font-bold text-[#F59E0B]">£{quote.price.toFixed(2)}</p>
+                      <p className="font-display text-[32px] font-bold text-accent">£{quote.price.toFixed(2)}</p>
                       <Button
                         className="btn-primary mt-3 uppercase"
                         onClick={() => void handleBookNow(quote)}
@@ -439,16 +447,19 @@ export function MoveWizard({ initialStep = 1 }: MoveWizardProps) {
                 </article>
               ))}
             </div>
-            <ButtonLink href="/move" variant="outline" className="btn-secondary">
-              Start another quote
-            </ButtonLink>
+            <div className="flex items-center justify-between">
+              <BackButton onClick={() => setWizardStep(3)} />
+              <ButtonLink href="/move" variant="outline" className="btn-secondary">
+                Start another quote
+              </ButtonLink>
+            </div>
           </div>
         ) : null}
 
         {step === 4 && !quoteData ? (
-          <div className="rounded border border-[rgba(245,158,11,0.3)] bg-[rgba(245,158,11,0.08)] p-5 text-[#F1F5F9]">
+          <div className="rounded border border-accent/30 bg-accent/8 p-5 text-primary">
             <h2 className="text-xl font-semibold">No quote results loaded</h2>
-            <p className="mt-2 text-sm text-[#94A3B8]">
+            <p className="mt-2 text-sm text-secondary">
               Quote results are created after completing the previous steps. Start from the route page and submit your details to
               generate live quotes.
             </p>
@@ -459,6 +470,17 @@ export function MoveWizard({ initialStep = 1 }: MoveWizardProps) {
         ) : null}
       </section>
     </main>
+  )
+}
+
+function BackButton({ onClick }: { onClick: () => void }) {
+  return (
+    <Button variant="outline" className="btn-secondary gap-1.5" onClick={onClick}>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+        <polyline points="15 18 9 12 15 6" />
+      </svg>
+      Back
+    </Button>
   )
 }
 
@@ -490,12 +512,12 @@ const PROGRESS_LABELS = ["Route", "Move details", "About you", "Quotes"]
 
 function Progress({ step }: { step: number }) {
   return (
-    <ol className="mb-8 grid grid-cols-4 gap-2 text-xs font-bold uppercase text-[#94A3B8]">
+    <ol className="mb-8 grid grid-cols-4 gap-2 text-xs font-bold uppercase text-secondary">
       {PROGRESS_LABELS.map((label, index) => {
         const n = index + 1
         return (
-          <li key={label} className={n < step ? "text-[#F59E0B]" : n === step ? "font-bold text-[#0F1923]" : "text-[#94A3B8]"}>
-            <span className={`mb-2 block h-1 rounded ${n < step ? "bg-[rgba(245,158,11,0.2)]" : n === step ? "bg-[#F59E0B]" : "bg-[rgba(255,255,255,0.1)]"}`} />
+          <li key={label} className={n <= step ? "text-accent" : "text-muted"}>
+            <span className={`mb-2 block h-1 rounded ${n < step ? "bg-accent/30" : n === step ? "bg-accent" : "bg-[var(--border)]"}`} />
             {label}
           </li>
         )
@@ -510,7 +532,9 @@ function OptionCard({ selected, onClick, children }: { selected: boolean; onClic
       type="button"
       onClick={onClick}
       className={`rounded-lg border-2 p-5 text-center transition ${
-        selected ? "border-[#F59E0B] bg-[rgba(245,158,11,0.08)]" : "border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] hover:border-[rgba(245,158,11,0.4)]"
+        selected
+          ? "border-accent bg-accent/8"
+          : "border-[var(--border)] bg-subtle hover:border-accent/40"
       }`}
     >
       {children}
@@ -532,7 +556,7 @@ function ClearableInput({
   required?: boolean
 }) {
   return (
-    <label className="text-[13px] font-medium uppercase tracking-[0.04em] text-[#94A3B8]">
+    <label className="text-[13px] font-medium uppercase tracking-[0.04em] text-secondary">
       {label}
       <div className="relative mt-1">
         <input
@@ -541,15 +565,15 @@ function ClearableInput({
           required={required}
           placeholder={required ? "required" : "optional"}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] p-3 pr-10 font-normal normal-case tracking-normal text-[#F1F5F9] placeholder:text-[#4B5563] focus:border-[#F59E0B] focus:outline-none focus:ring-2 focus:ring-[rgba(245,158,11,0.15)]"
+          className="w-full rounded border border-[var(--input-border)] bg-input-bg p-3 pr-10 font-normal normal-case tracking-normal text-primary placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/15"
         />
         {value ? (
           <button
             type="button"
             onClick={() => onChange("")}
-            className="absolute right-2 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded text-[#94A3B8] hover:bg-[#223040] hover:text-[#F59E0B]"
+            className="absolute right-2 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded text-secondary hover:bg-hover-bg hover:text-accent"
           >
-            x
+            ×
           </button>
         ) : null}
       </div>

@@ -79,13 +79,13 @@ function stairsTotal(legs: AddressLeg[]): number {
   return legs.reduce((sum, leg) => sum + (Number.isFinite(leg.stairs) ? leg.stairs : 0), 0)
 }
 
-export function suggestedHours(durationMinutes: number, cfg: PricingConfig): number {
+function suggestedHours(durationMinutes: number, cfg: PricingConfig): number {
   const travelHours = durationMinutes / 60
   const rounded = Math.ceil((travelHours + 0.5) * 2) / 2
   return Math.min(cfg.maxHours, Math.max(cfg.minHours, rounded))
 }
 
-export function formatDuration(minutes: number): string {
+function formatDuration(minutes: number): string {
   if (minutes < 60) return `${minutes} minutes`
   const h = Math.floor(minutes / 60)
   const m = minutes % 60

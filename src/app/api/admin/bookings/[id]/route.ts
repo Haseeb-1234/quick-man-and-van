@@ -13,7 +13,7 @@ async function requireAdmin() {
 const updateSchema = z.object({
   status: z.nativeEnum(BookingStatus).optional(),
   contactName: z.string().max(120).optional(),
-  contactEmail: z.string().email().optional(),
+  contactEmail: z.email().optional(),
   contactPhone: z.string().max(30).optional(),
 })
 
