@@ -6,7 +6,8 @@ import type { AddressLeg, DriverQuote, JourneySummary, QuoteRequest, VanType } f
 import Image from "next/image"
 import { emptyAddressLeg } from "@/types/quote"
 import { useSearchParams } from "next/navigation"
-import { useMemo, useState } from "react"
+import { DEPOSIT_PERCENT, DEPOSIT_RATE, REMAINDER_PERCENT } from "@/lib/payment-config"
+import { useMemo, useRef, useState } from "react"
 
 const VAN_OPTIONS: { value: VanType; label: string; dimensions: string; payload: string; seats: number; image: string }[] = [
   { value: 0, label: "Small van", dimensions: "1.7m x 1.49m x 1.2m", payload: "600-800kg", seats: 2, image: "/images/vans/van-small.png" },
@@ -104,6 +105,8 @@ export function MoveWizard({ initialStep = 1 }: MoveWizardProps) {
   const [error, setError] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
   const [bookingLoading, setBookingLoading] = useState<string | null>(null)
+  const [paymentType, setPaymentType] = useState<"FULL" | "DEPOSIT">("FULL")
+  const tripsDialogRef = useRef<HTMLDialogElement>(null)
 
   function setWizardStep(nextStep: number) {
     setStep(nextStep)
@@ -186,7 +189,7 @@ export function MoveWizard({ initialStep = 1 }: MoveWizardProps) {
       const bookingRes = await fetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...payload, selectedQuoteId: quote.id }),
+        body: JSON.stringify({ ...payload, selectedQuoteId: quote.id, paymentType }),
       })
       const bookingData = (await bookingRes.json()) as { bookingId?: string; checkoutToken?: string; error?: string }
       if (!bookingRes.ok) {
@@ -296,7 +299,17 @@ export function MoveWizard({ initialStep = 1 }: MoveWizardProps) {
             <section>
               <h2 className="text-2xl font-semibold text-primary">What van size do you need?</h2>
               <p className="mt-2 text-sm text-secondary">
-                The van size you select must fit all the items you wish to move. The quote is for one trip only.
+                The van size you select must fit all the items you wish to move.{" "}
+                <span className="font-semibold text-red-600 dark:text-red-400">
+                  The quote is for ONE trip only. Additional trips will be charged extra by the driver.
+                </span>{" "}
+                <button
+                  type="button"
+                  onClick={() => tripsDialogRef.current?.showModal()}
+                  className="text-accent underline underline-offset-2 hover:opacity-75"
+                >
+                  Read More
+                </button>
               </p>
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
                 {VAN_OPTIONS.map((van) => (
@@ -304,7 +317,7 @@ export function MoveWizard({ initialStep = 1 }: MoveWizardProps) {
                     <p className="font-bold text-primary">{van.dimensions}</p>
                     <p className="text-xs text-secondary">(Load space LxWxH)</p>
                     <div className="relative my-4 h-20 w-full">
-                      <Image src={van.image} alt={van.label} fill className="object-contain" />
+                      <Image src={van.image} alt={van.label} fill sizes="(max-width: 640px) calc(50vw - 48px), 220px" className="object-contain" />
                     </div>
                     <p className={vantype === van.value ? "font-bold text-accent" : "font-bold text-primary"}>{van.label}</p>
                     <p className="text-xs text-secondary">Payload: {van.payload} • Seats: {van.seats} inc driver</p>
@@ -345,7 +358,7 @@ export function MoveWizard({ initialStep = 1 }: MoveWizardProps) {
                   <OptionCard key={option.value} selected={helpers === option.value} onClick={() => setHelpers(option.value)}>
                     {option.image ? (
                       <div className="relative mx-auto mb-3 h-20 w-20">
-                        <Image src={option.image} alt={option.label} fill className="object-contain" />
+                        <Image src={option.image} alt={option.label} fill sizes="80px" className="object-contain" />
                       </div>
                     ) : (
                       <div className="mx-auto mb-3 flex h-20 w-20 items-center justify-center rounded-full bg-accent/10">
@@ -436,6 +449,40 @@ export function MoveWizard({ initialStep = 1 }: MoveWizardProps) {
             <div className="rounded border border-accent/30 bg-accent/8 px-4 py-3 text-primary">
               {submitted ? "Your quote request is ready. Choose a provider below to continue to booking." : "Quotes ready."}
             </div>
+
+            <div className="rounded-lg border border-[var(--border)] bg-surface p-5">
+              <h3 className="text-base font-semibold text-primary">How would you like to pay?</h3>
+              <div className="mt-3 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setPaymentType("FULL")}
+                  className={`flex-1 rounded-lg border-2 p-3 text-center text-sm font-semibold transition ${
+                    paymentType === "FULL"
+                      ? "border-accent bg-accent/8 text-accent"
+                      : "border-[var(--border)] text-secondary hover:border-accent/40"
+                  }`}
+                >
+                  Pay in full
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentType("DEPOSIT")}
+                  className={`flex-1 rounded-lg border-2 p-3 text-center text-sm font-semibold transition ${
+                    paymentType === "DEPOSIT"
+                      ? "border-accent bg-accent/8 text-accent"
+                      : "border-[var(--border)] text-secondary hover:border-accent/40"
+                  }`}
+                >
+                  {DEPOSIT_PERCENT}% deposit now
+                </button>
+              </div>
+              {paymentType === "DEPOSIT" ? (
+                <p className="mt-3 rounded border border-amber-400/30 bg-amber-400/8 px-3 py-2 text-xs leading-relaxed text-amber-700 dark:text-amber-300">
+                  Pay <strong>{DEPOSIT_PERCENT}% of the total now</strong> to secure your booking. The remaining {REMAINDER_PERCENT}% can be settled by cash or bank transfer directly to the driver after the job is complete.
+                </p>
+              ) : null}
+            </div>
+
             <div className="grid gap-4">
               {quoteData.quotes.map((quote) => (
                 <article key={quote.id} className="rounded border border-[var(--border)] bg-surface p-5 shadow-[0_1px_3px_rgba(0,0,0,0.1)]">
@@ -448,7 +495,14 @@ export function MoveWizard({ initialStep = 1 }: MoveWizardProps) {
                       </p>
                     </div>
                     <div className="text-left sm:text-right">
-                      <p className="font-display text-[32px] font-bold text-accent">£{quote.price.toFixed(2)}</p>
+                      {paymentType === "DEPOSIT" ? (
+                        <>
+                          <p className="font-display text-[32px] font-bold text-accent">£{(quote.price * DEPOSIT_RATE).toFixed(2)}</p>
+                          <p className="text-xs text-secondary">{DEPOSIT_PERCENT}% deposit · Total: £{quote.price.toFixed(2)}</p>
+                        </>
+                      ) : (
+                        <p className="font-display text-[32px] font-bold text-accent">£{quote.price.toFixed(2)}</p>
+                      )}
                       <Button
                         className="btn-primary mt-3 uppercase"
                         onClick={() => void handleBookNow(quote)}
@@ -461,6 +515,26 @@ export function MoveWizard({ initialStep = 1 }: MoveWizardProps) {
                 </article>
               ))}
             </div>
+
+            <div className="rounded-lg border border-[var(--border)] bg-subtle p-5">
+              <h3 className="text-base font-semibold text-primary">Congestion charge</h3>
+              <p className="mt-2 text-sm leading-relaxed text-secondary">
+                If your route passes through the London Congestion Zone you will be charged extra. The Congestion Charge is a{" "}
+                <strong className="text-primary">£18.00 daily charge</strong> if you drive within the Congestion Charge zone{" "}
+                <strong className="text-primary">7:00–18:00 Monday–Friday</strong> and{" "}
+                <strong className="text-primary">12:00–18:00 Saturday–Sunday and bank holidays</strong>. No charge between Christmas Day and New Year&apos;s Day bank holiday (inclusive). To learn more, visit the{" "}
+                <a
+                  href="https://tfl.gov.uk/modes/driving/congestion-charge"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-accent underline underline-offset-2 hover:opacity-75"
+                >
+                  TfL congestion charge page
+                </a>
+                .
+              </p>
+            </div>
+
             <div className="flex items-center justify-between">
               <BackButton onClick={() => setWizardStep(3)} />
               <ButtonLink href="/move" variant="outline" className="btn-secondary">
@@ -483,6 +557,38 @@ export function MoveWizard({ initialStep = 1 }: MoveWizardProps) {
           </div>
         ) : null}
       </section>
+
+      <dialog
+        ref={tripsDialogRef}
+        aria-labelledby="trips-modal-title"
+        className="relative m-auto w-full max-w-md rounded-lg border-0 bg-surface p-6 shadow-xl backdrop:bg-black/50"
+      >
+        <button
+          type="button"
+          onClick={() => tripsDialogRef.current?.close()}
+          className="absolute right-3 top-3 flex size-7 items-center justify-center rounded text-secondary hover:bg-hover-bg hover:text-primary"
+          aria-label="Close"
+        >
+          ×
+        </button>
+        <h2 id="trips-modal-title" className="text-xl font-bold text-primary">Additional trips cost</h2>
+        <p className="mt-4 text-sm leading-relaxed text-secondary">
+          Your booking with us will cover the cost from Collection to Delivery (via stop points if defined). If you need to do an additional trip, please note that the driver will charge you extra for the mileage and for{" "}
+          <strong className="text-primary">2 stop points</strong> for each additional trip (
+          <strong className="text-primary">even if it is within the booking&apos;s time interval</strong>).
+        </p>
+        <h3 className="mt-5 text-base font-bold text-primary">Recommendation</h3>
+        <p className="mt-2 text-sm leading-relaxed text-secondary">
+          In general it is more efficient for the customer to order the right size van to move all items in one go (even if the mileage is short), rather than to order a smaller van and do multiple runs.
+        </p>
+        <button
+          type="button"
+          onClick={() => tripsDialogRef.current?.close()}
+          className="mt-6 w-full rounded border border-[var(--border)] py-2 text-sm font-bold uppercase tracking-wider text-secondary hover:bg-hover-bg"
+        >
+          Close
+        </button>
+      </dialog>
     </main>
   )
 }

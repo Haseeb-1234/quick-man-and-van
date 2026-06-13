@@ -2,7 +2,7 @@ import { z } from "zod"
 
 export const COORDS_REQUIRED_MESSAGE = "Valid address with coordinates required."
 
-export const vanTypeSchema = z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3)])
+const vanTypeSchema = z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3)])
 
 function legHasValidCoords(leg: { lat: unknown; long: unknown }): boolean {
   return (
@@ -29,7 +29,7 @@ export const addressLegSchema = addressLegBaseSchema.refine(legHasValidCoords, {
 })
 
 /** Stops with a non-empty address must include coordinates; blank placeholder rows are allowed. */
-export const stopLegSchema = z
+const stopLegSchema = z
   .object({
     addr: z.string().max(600),
     street: z.string().max(300).default(""),
@@ -85,6 +85,7 @@ export const createBookingSchema = quoteRequestSchema.extend({
   clientphone: z.string().min(7).max(30),
   message: z.string().max(1000).optional(),
   selectedQuoteId: z.string().max(50).optional(),
+  paymentType: z.enum(["FULL", "DEPOSIT"]).default("FULL"),
 })
 
 export const checkoutBodySchema = z.object({

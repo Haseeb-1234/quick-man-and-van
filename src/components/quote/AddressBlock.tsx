@@ -112,6 +112,7 @@ export function AddressBlock({ title, searchLabel, leg, onChange, compact = fals
           <input
             id={`${baseId}-addr`}
             type="text"
+            aria-label={searchLabel}
             value={leg.addr}
             placeholder="Start typing, then select address"
             autoComplete="new-password"

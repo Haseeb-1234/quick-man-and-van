@@ -1,3 +1,4 @@
+import { DEPOSIT_PERCENT, DEPOSIT_RATE } from "@/lib/payment-config"
 import { recomputeBookingPrice } from "@/lib/pricing"
 import { prisma } from "@/lib/prisma"
 import { getStripe } from "@/lib/stripe"
@@ -60,7 +61,9 @@ export async function POST(req: Request) {
     }
   }
 
-  const unitAmount = Math.round(booking.price * 100)
+  const isDeposit = booking.paymentType === "DEPOSIT"
+  const chargeAmount = isDeposit ? booking.price * DEPOSIT_RATE : booking.price
+  const unitAmount = Math.round(chargeAmount * 100)
   if (unitAmount < 50) {
     return NextResponse.json({ error: "amount_too_small" }, { status: 400 })
   }
@@ -84,6 +87,7 @@ export async function POST(req: Request) {
         client_reference_id: booking.id,
         metadata: {
           bookingId: booking.id,
+          paymentType: booking.paymentType,
         },
         payment_intent_data: {
           metadata: { bookingId: booking.id },
@@ -96,7 +100,9 @@ export async function POST(req: Request) {
               unit_amount: unitAmount,
               product_data: {
                 name: "Man and van move",
-                description: `Booking ${booking.id.slice(0, 8)} — ${booking.collectionPostcode} → ${booking.deliveryPostcode}`,
+                description: isDeposit
+                ? `${DEPOSIT_PERCENT}% deposit — Booking ${booking.id.slice(0, 8)} — ${booking.collectionPostcode} → ${booking.deliveryPostcode}. Remaining balance due after the job.`
+                : `Booking ${booking.id.slice(0, 8)} — ${booking.collectionPostcode} → ${booking.deliveryPostcode}`,
               },
             },
           },

@@ -35,6 +35,7 @@ model Booking {
   stripePaymentId    String?
   stripeSessionId    String?
   checkoutToken      String?
+  paymentType        PaymentType   @default(FULL)
   status             BookingStatus @default(PENDING)
   contactEmail       String?
   contactName        String?
@@ -49,6 +50,11 @@ enum BookingStatus {
   CONFIRMED
   COMPLETED
   CANCELLED
+}
+
+enum PaymentType {
+  FULL
+  DEPOSIT
 }
 
 model PricingSettings {

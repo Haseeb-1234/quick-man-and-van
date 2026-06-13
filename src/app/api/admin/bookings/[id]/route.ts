@@ -10,8 +10,10 @@ async function requireAdmin() {
   return session != null
 }
 
+const bookingStatusValues = Object.values(BookingStatus) as [BookingStatus, ...BookingStatus[]]
+
 const updateSchema = z.object({
-  status: z.nativeEnum(BookingStatus).optional(),
+  status: z.enum(bookingStatusValues).optional(),
   contactName: z.string().max(120).optional(),
   contactEmail: z.email().optional(),
   contactPhone: z.string().max(30).optional(),

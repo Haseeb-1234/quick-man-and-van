@@ -1,4 +1,5 @@
 import { sendBookingConfirmationEmail } from "@/lib/booking-email"
+import { DEPOSIT_RATE } from "@/lib/payment-config"
 import { prisma } from "@/lib/prisma"
 import { getStripe } from "@/lib/stripe"
 import { NextResponse } from "next/server"
@@ -39,11 +40,14 @@ export async function POST(req: Request) {
     }
 
     const paidGbp = (session.amount_total ?? 0) / 100
-    if (Math.abs(paidGbp - booking.price) > 0.02) {
+    const expectedGbp = booking.paymentType === "DEPOSIT" ? booking.price * DEPOSIT_RATE : booking.price
+    if (Math.abs(paidGbp - expectedGbp) > 0.02) {
       console.error("Amount mismatch", {
         bookingId,
         paidGbp,
+        expectedGbp,
         storedPrice: booking.price,
+        paymentType: booking.paymentType,
       })
       return NextResponse.json({ error: "amount mismatch" }, { status: 500 })
     }

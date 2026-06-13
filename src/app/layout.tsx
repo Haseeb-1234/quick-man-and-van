@@ -43,7 +43,8 @@ export default function RootLayout({
   return (
     <html lang="en-GB" className="h-full scroll-smooth" suppressHydrationWarning>
       <head>
-        {/* Apply saved theme before first paint to avoid flash */}
+        {/* Theme init runs synchronously before first paint to prevent FOUC.
+            dangerouslySetInnerHTML is safe here — content is 100% static. */}
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}})()`,

@@ -77,6 +77,7 @@ export async function POST(req: Request) {
         contactName: data.clientname?.trim() || null,
         contactPhone: data.clientphone?.trim() || null,
         checkoutToken,
+        paymentType: data.paymentType,
         status: "PENDING",
       },
     })

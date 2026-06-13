@@ -58,11 +58,13 @@ export default function PricingForm({ initialValues }: { initialValues: PricingC
     <form onSubmit={(e) => void handleSubmit(e)} className="max-w-2xl space-y-6">
       {FIELDS.map((field) => (
         <div key={field.key} className="rounded border border-[rgba(255,255,255,0.07)] bg-[#1A2733] p-4">
-          <label className="mb-1 block text-sm font-medium text-white">{field.label}</label>
+          <label htmlFor={field.key} className="mb-1 block text-sm font-medium text-white">{field.label}</label>
           <p className="mb-3 text-xs text-[#94A3B8]">{field.description}</p>
           <div className="flex items-center gap-2">
             {field.prefix && <span className="text-[#94A3B8]">{field.prefix}</span>}
             <input
+              id={field.key}
+              aria-label={field.label}
               type={field.type}
               step={field.step ?? (field.type === "number" ? "0.01" : undefined)}
               min={field.type === "number" ? 0 : undefined}
