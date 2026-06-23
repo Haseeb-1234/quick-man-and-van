@@ -29,11 +29,6 @@ export function Footer() {
             <ul className="mt-3 space-y-2 text-sm text-secondary">
               <li>{CONTACT.hoursLabel}</li>
               <li>
-                <a href={`tel:${CONTACT.phoneTel1}`} className="text-accent transition duration-150 hover:text-accent-hover">
-                  {CONTACT.phoneDisplay1}
-                </a>
-              </li>
-              <li>
                 <a href={`mailto:${CONTACT.email}`} className="text-accent transition duration-150 hover:text-accent-hover">
                   {CONTACT.email}
                 </a>
