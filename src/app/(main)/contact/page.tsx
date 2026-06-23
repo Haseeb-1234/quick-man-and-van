@@ -27,12 +27,6 @@ export default function ContactPage() {
               <p className="mt-1 font-medium text-primary">{CONTACT.hoursLabel}</p>
             </div>
             <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-secondary">Phone</p>
-              <a href={`tel:${CONTACT.phoneTel1}`} className="mt-1 block font-medium text-accent hover:text-accent-hover transition duration-150">
-                {CONTACT.phoneDisplay1}
-              </a>
-            </div>
-            <div>
               <p className="text-xs font-medium uppercase tracking-wide text-secondary">Email</p>
               <a href={`mailto:${CONTACT.email}`} className="mt-1 block font-medium text-accent hover:text-accent-hover transition duration-150">
                 {CONTACT.email}

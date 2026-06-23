@@ -7,7 +7,7 @@ export function getResend(): Resend | null {
 }
 
 export function bookingFromEmail(): string {
-  return process.env.RESEND_FROM_EMAIL ?? "Laxami Man and Van <onboarding@resend.dev>"
+  return process.env.RESEND_FROM_EMAIL ?? "Laxami Man and Van <info@laxamigroupsltd.com>"
 }
 
 export function adminEmail(): string {

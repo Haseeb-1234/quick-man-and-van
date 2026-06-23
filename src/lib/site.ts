@@ -7,8 +7,6 @@ export const WHATSAPP_URL = "https://wa.me/447342241587"
 
 export const CONTACT = {
   hoursLabel: "Mon–Sat 08:00–19:00",
-  phoneDisplay1: "0303 809 7452",
-  phoneTel1: "03038097452",
   email: "manvan639@gmail.com",
 } as const
 
