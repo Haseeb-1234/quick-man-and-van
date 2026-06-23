@@ -7,7 +7,7 @@ export const WHATSAPP_URL = "https://wa.me/447342241587"
 
 export const CONTACT = {
   hoursLabel: "Mon–Sat 08:00–19:00",
-  email: "manvan639@gmail.com",
+  email: "info@laxamigroupsltd.com",
 } as const
 
 export const SERVICE_CITIES = [
