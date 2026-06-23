@@ -33,9 +33,9 @@ export function QuickQuoteWidget() {
 
   return (
     <div className="surface-card p-6 shadow-[0_4px_24px_rgba(0,0,0,0.12)] sm:p-8">
-      <h2 className="font-display text-3xl font-bold text-primary">Man and Van Quotes</h2>
+      <h2 className="font-display text-3xl font-bold text-primary">Laxami Man and Van Quotes</h2>
       <p className="mt-2 text-sm leading-6 text-secondary">
-        Get <strong>free quotes</strong> for <strong>Man and Van service</strong> in under a minute. <strong>Book online</strong> and move.
+        Get <strong>free quotes</strong> for <strong>Laxami Man and Van service</strong> in under a minute. <strong>Book online</strong> and move.
       </p>
 
       <div className="mt-6 space-y-4">

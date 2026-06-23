@@ -21,7 +21,7 @@ export function Footer() {
           <div>
             <p className="font-semibold text-primary">{SITE_NAME}</p>
             <p className="mt-2 text-sm leading-relaxed text-secondary">
-              Man and van moves across the UK. Instant quotes and simple booking — no driver app required on your side.
+              Laxami Man and Van — moves across the UK. Instant quotes and simple booking, no driver app required on your side.
             </p>
           </div>
           <div>

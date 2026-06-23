@@ -61,3 +61,4 @@ booking-test.js
 # allow committed assets
 !public/images/**
 !src/app/icon.png
+!src/app/apple-icon.png

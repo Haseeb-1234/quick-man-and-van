@@ -1,9 +1,9 @@
-export const SITE_NAME = "Man and Van"
+export const SITE_NAME = "Laxami Man and Van"
 
 export const SITE_DESCRIPTION =
-  "UK man and van bookings — instant quotes, trusted movers, nationwide coverage."
+  "Laxami Man and Van — instant quotes, trusted movers, nationwide UK coverage."
 
-export const WHATSAPP_URL = "https://wa.me/443038097452"
+export const WHATSAPP_URL = "https://wa.me/447342241587"
 
 export const CONTACT = {
   hoursLabel: "Mon–Sat 08:00–19:00",

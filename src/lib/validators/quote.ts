@@ -1,3 +1,4 @@
+import { parseMoveDateTime } from "@/lib/move-date"
 import { z } from "zod"
 
 export const COORDS_REQUIRED_MESSAGE = "Valid address with coordinates required."
@@ -95,4 +96,13 @@ export const checkoutBodySchema = z.object({
 
 export function hasCoordsValidationError(error: z.ZodError): boolean {
   return error.issues.some((issue) => issue.message === COORDS_REQUIRED_MESSAGE)
+}
+
+export const MIN_BOOKING_LEAD_MS = 5 * 60 * 60 * 1000
+
+export function checkLeadTime(date: string, time: string): string | null {
+  const moveAt = parseMoveDateTime(date, time)
+  return moveAt < new Date(Date.now() + MIN_BOOKING_LEAD_MS)
+    ? "Bookings must be made at least 5 hours in advance."
+    : null
 }

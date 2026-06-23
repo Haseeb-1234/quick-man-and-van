@@ -19,7 +19,7 @@ export type PricingConfig = {
 }
 
 const DEFAULTS: PricingConfig = {
-  companyName: "Man and Van",
+  companyName: "Laxami Man and Van",
   rating: 4.9,
   reviewCount: 0,
   smallVanRate: 25,
@@ -92,11 +92,7 @@ function formatDuration(minutes: number): string {
   return m ? `${h} hours and ${m} minutes` : `${h} hours`
 }
 
-export function parseMoveDateTime(date: string, time: string): Date {
-  const [day, month, year] = date.split("/").map(Number)
-  const [hour, minute] = time.split(":").map(Number)
-  return new Date(Date.UTC(year, month - 1, day, hour ?? 0, minute ?? 0, 0))
-}
+export { parseMoveDateTime } from "@/lib/move-date"
 
 function calculatePrice(
   input: QuoteRequest,

@@ -7,6 +7,7 @@ import Image from "next/image"
 import { emptyAddressLeg } from "@/types/quote"
 import { useSearchParams } from "next/navigation"
 import { DEPOSIT_PERCENT, DEPOSIT_RATE, REMAINDER_PERCENT } from "@/lib/payment-config"
+import { parseMoveDateTime } from "@/lib/move-date"
 import { useMemo, useRef, useState } from "react"
 
 const VAN_OPTIONS: { value: VanType; label: string; dimensions: string; payload: string; seats: number; image: string }[] = [
@@ -78,6 +79,21 @@ function hoursOptions() {
   const out: number[] = []
   for (let h = 5; h <= 17.5; h += 0.5) out.push(h)
   return out
+}
+
+const MIN_LEAD_HOURS = 5
+
+function todayIso(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+}
+
+function minTimeForDate(dateUk: string): string | undefined {
+  if (ukToIso(dateUk) !== todayIso()) return undefined
+  const earliest = new Date(Date.now() + MIN_LEAD_HOURS * 60 * 60 * 1000)
+  const rem = earliest.getMinutes() % 15
+  if (rem !== 0) earliest.setMinutes(earliest.getMinutes() + (15 - rem), 0, 0)
+  return `${String(earliest.getHours()).padStart(2, "0")}:${String(earliest.getMinutes()).padStart(2, "0")}`
 }
 
 type MoveWizardProps = {
@@ -179,6 +195,11 @@ export function MoveWizard({ initialStep = 1 }: MoveWizardProps) {
   }
 
   async function continueFromDetails() {
+    const moveAt = parseMoveDateTime(date, time)
+    if (moveAt < new Date(Date.now() + MIN_LEAD_HOURS * 60 * 60 * 1000)) {
+      setError("Bookings must be made at least 5 hours in advance. Please choose a later date or time.")
+      return
+    }
     await calculate(3)
   }
 
@@ -384,6 +405,7 @@ export function MoveWizard({ initialStep = 1 }: MoveWizardProps) {
                   Planning to move on
                   <input
                     type="date"
+                    min={todayIso()}
                     value={ukToIso(date)}
                     onChange={(e) => setDate(isoToUk(e.target.value))}
                     className="scheme-adaptive mt-1 w-full rounded border border-[var(--input-border)] bg-input-bg p-3 font-normal text-primary focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/15"
@@ -393,13 +415,18 @@ export function MoveWizard({ initialStep = 1 }: MoveWizardProps) {
                   at
                   <input
                     type="time"
+                    min={minTimeForDate(date)}
                     value={time}
                     onChange={(e) => setTime(e.target.value)}
                     className="scheme-adaptive mt-1 w-full rounded border border-[var(--input-border)] bg-input-bg p-3 font-normal text-primary focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/15"
                   />
                 </label>
               </div>
-              <p className="mt-5 rounded bg-accent/8 px-4 py-3 text-sm text-secondary">
+              <p className="mt-3 text-sm text-secondary">
+                We need at least 5 hours&apos; notice to arrange a driver.{" "}
+                {minTimeForDate(date) ? `Same-day bookings must start at ${minTimeForDate(date)} or later.` : ""}
+              </p>
+              <p className="mt-3 rounded bg-accent/8 px-4 py-3 text-sm text-secondary">
                 There will be room for {passengerSpaces} passenger{passengerSpaces === 1 ? "" : "s"} to travel in the van free of charge.
               </p>
             </section>

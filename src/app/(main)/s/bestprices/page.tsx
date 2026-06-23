@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 
 export const metadata: Metadata = {
   title: "Best prices",
-  description: "How Man and Van keeps pricing fair and transparent for UK moves.",
+  description: "How Laxami Man and Van keeps pricing fair and transparent for UK moves.",
 }
 
 export default function BestPricesPage() {

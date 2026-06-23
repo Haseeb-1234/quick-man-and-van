@@ -32,6 +32,8 @@ export function AddressBlock({ title, searchLabel, leg, onChange, compact = fals
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [resolving, setResolving] = useState(false)
+  const [resolveError, setResolveError] = useState<string | null>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const wrapRef = useRef<HTMLDivElement>(null)
 
@@ -91,9 +93,40 @@ export function AddressBlock({ title, searchLabel, leg, onChange, compact = fals
     }
   }
 
+  async function resolveOnBlur() {
+    if (leg.lat != null || leg.addr.trim().length < 5) return
+    setResolving(true)
+    setResolveError(null)
+    try {
+      const res = await fetch(`/api/addresses/autocomplete?term=${encodeURIComponent(leg.addr.trim())}`)
+      const data = (await res.json()) as { suggestions?: Suggestion[] }
+      const top = Array.isArray(data.suggestions) && data.suggestions.length > 0 ? data.suggestions[0] : null
+      if (!top) {
+        setResolveError("Address not found — try a more specific address or select from the dropdown.")
+        return
+      }
+      if (top.detail) {
+        onChange({ ...top.detail, stairs: leg.stairs })
+      } else {
+        const detailRes = await fetch(`/api/addresses/detail?id=${encodeURIComponent(top.id)}`)
+        if (detailRes.ok) {
+          const detail = (await detailRes.json()) as AddressLeg
+          onChange({ ...detail, stairs: leg.stairs })
+        } else {
+          setResolveError("Could not verify address — please select from the dropdown.")
+        }
+      }
+    } catch {
+      setResolveError("Could not verify address — please select from the dropdown.")
+    } finally {
+      setResolving(false)
+    }
+  }
+
   function clear() {
     onChange(emptyAddressLeg())
     setSuggestions([])
+    setResolveError(null)
   }
 
   return (
@@ -118,9 +151,11 @@ export function AddressBlock({ title, searchLabel, leg, onChange, compact = fals
             autoComplete="new-password"
             onChange={(e) => {
               onChange({ ...leg, addr: e.target.value, lat: null, long: null })
+              setResolveError(null)
               setOpen(true)
             }}
             onFocus={() => setOpen(true)}
+            onBlur={() => void resolveOnBlur()}
             className="w-full rounded border border-[var(--input-border)] bg-input-bg p-3 pr-10 text-base text-primary outline-none placeholder:text-muted focus:border-accent focus:ring-2 focus:ring-accent/15"
           />
           {leg.addr ? (
@@ -135,7 +170,10 @@ export function AddressBlock({ title, searchLabel, leg, onChange, compact = fals
           ) : null}
         </div>
         {open && suggestions.length > 0 ? (
-          <ul className="absolute z-30 mt-1 max-h-56 w-full overflow-auto rounded border border-[var(--border)] bg-surface py-1 text-sm shadow-xl">
+          <ul
+            className="absolute z-30 mt-1 max-h-56 w-full overflow-auto rounded border border-[var(--border)] bg-surface py-1 text-sm shadow-xl"
+            onMouseDown={(e) => e.preventDefault()}
+          >
             {suggestions.map((suggestion) => (
               <li key={suggestion.id}>
                 <button
@@ -151,6 +189,8 @@ export function AddressBlock({ title, searchLabel, leg, onChange, compact = fals
           </ul>
         ) : null}
         {loading ? <p className="mt-1 text-xs text-secondary">Searching addresses…</p> : null}
+        {resolving ? <p className="mt-1 text-xs text-secondary">Checking address…</p> : null}
+        {resolveError ? <p className="mt-1 text-xs text-red-600 dark:text-red-400">{resolveError}</p> : null}
       </div>
 
       {!compact ? (

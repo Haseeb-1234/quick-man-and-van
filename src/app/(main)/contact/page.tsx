@@ -5,7 +5,7 @@ import type { Metadata } from "next"
 
 export const metadata: Metadata = {
   title: "Contact",
-  description: "Reach Man and Van — phone, WhatsApp, email, or send us a message.",
+  description: "Reach Laxami Man and Van — phone, WhatsApp, email, or send us a message.",
 }
 
 export default function ContactPage() {

@@ -1,7 +1,7 @@
 import { rejectOversizedJsonRequest } from "@/lib/api-security"
 import { prisma } from "@/lib/prisma"
 import { computeQuotes, parseMoveDateTime, vanLabels } from "@/lib/pricing"
-import { COORDS_REQUIRED_MESSAGE, createBookingSchema, hasCoordsValidationError } from "@/lib/validators/quote"
+import { COORDS_REQUIRED_MESSAGE, checkLeadTime, createBookingSchema, hasCoordsValidationError } from "@/lib/validators/quote"
 import { randomUUID } from "crypto"
 import { NextResponse } from "next/server"
 
@@ -23,6 +23,9 @@ export async function POST(req: Request) {
     }
     return NextResponse.json({ error: "validation_error", issues: parsed.error.flatten() }, { status: 400 })
   }
+
+  const leadError = checkLeadTime(parsed.data.date, parsed.data.time)
+  if (leadError) return NextResponse.json({ error: leadError }, { status: 400 })
 
   const data = parsed.data
   const { minHours } = await computeQuotes(data)

@@ -1,5 +1,5 @@
 {
-  "name": "quick-man-and-van",
+  "name": "laxami-man-and-van",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -38,7 +38,6 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "playwright": "^1.60.0",
-    "react-doctor": "^0.2.10",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

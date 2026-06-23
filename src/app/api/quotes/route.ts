@@ -1,6 +1,6 @@
 import { rejectOversizedJsonRequest } from "@/lib/api-security"
 import { computeQuotes } from "@/lib/pricing"
-import { COORDS_REQUIRED_MESSAGE, hasCoordsValidationError, quoteRequestSchema } from "@/lib/validators/quote"
+import { COORDS_REQUIRED_MESSAGE, checkLeadTime, hasCoordsValidationError, quoteRequestSchema } from "@/lib/validators/quote"
 import { NextResponse } from "next/server"
 
 export async function POST(req: Request) {
@@ -21,6 +21,9 @@ export async function POST(req: Request) {
     }
     return NextResponse.json({ error: "validation_error", issues: parsed.error.flatten() }, { status: 400 })
   }
+
+  const leadError = checkLeadTime(parsed.data.date, parsed.data.time)
+  if (leadError) return NextResponse.json({ error: leadError }, { status: 400 })
 
   try {
     const result = await computeQuotes(parsed.data)
