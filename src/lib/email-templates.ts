@@ -159,7 +159,7 @@ export const SAMPLE_EMAIL_VARS: Record<string, string> = {
   deliverPostcode: "SW1A 1AA",
   deliverStairs: "2",
   stopsList: "<li>Stop 1: 50 Midway Lane, London (N1 9GU)</li>",
-  moveDate: "2026-07-15T09:00:00.000Z",
+  moveDate: "Wednesday, 15 July 2026 at 10:00",
   vanSize: "Large van",
   helpers: "2",
   paymentLine: "£210.00 (paid in full)",

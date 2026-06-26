@@ -8,7 +8,7 @@ import {
   renderSubject,
   SAMPLE_EMAIL_VARS,
 } from "@/lib/email-templates"
-import { useRef, useState } from "react"
+import { useDeferredValue, useRef, useState } from "react"
 
 type EmailValues = { customerSubject: string; customerBody: string }
 
@@ -39,12 +39,17 @@ export default function EmailTemplateForm({ initialValues }: { initialValues: Em
     const current = values[key]
     const start = el?.selectionStart ?? current.length
     const end = el?.selectionEnd ?? current.length
-    const next = current.slice(0, start) + token + current.slice(end)
-    update(key, next)
+    const before = current.slice(0, start)
+    const after = current.slice(end)
+    // Pad with spaces so the tag never runs into adjacent words.
+    let insert = token
+    if (before.length > 0 && !/\s$/.test(before)) insert = ` ${insert}`
+    if (after.length > 0 && !/^\s/.test(after)) insert = `${insert} `
+    update(key, before + insert + after)
     requestAnimationFrame(() => {
       if (!el) return
       el.focus()
-      const pos = start + token.length
+      const pos = start + insert.length
       el.setSelectionRange(pos, pos)
     })
   }
@@ -88,16 +93,20 @@ export default function EmailTemplateForm({ initialValues }: { initialValues: Em
   }
 
   function handleReset() {
+    if (!window.confirm("Reset to the default email? Any unsaved changes will be lost.")) return
     setValues({ customerSubject: DEFAULT_CUSTOMER_SUBJECT, customerBody: DEFAULT_CUSTOMER_BODY })
     setFeedback(null)
   }
 
+  // Defer the body so the preview iframe re-renders once typing settles, not on
+  // every keystroke (avoids flicker/partial frames while typing).
+  const deferredBody = useDeferredValue(values.customerBody)
   const previewSubject = renderSubject(values.customerSubject, SAMPLE_EMAIL_VARS)
-  const previewBody = renderEmailBody(values.customerBody, SAMPLE_EMAIL_VARS)
+  const previewBody = renderEmailBody(deferredBody, SAMPLE_EMAIL_VARS)
   const previewDoc = `<!doctype html><html><head><meta charset="utf-8"></head><body style="margin:0;padding:16px;font-family:Arial,Helvetica,sans-serif;color:#0F1923;background:#ffffff;font-size:14px;line-height:1.55">${previewBody}</body></html>`
 
   return (
-    <form onSubmit={(e) => void handleSubmit(e)} className="grid gap-6 lg:grid-cols-2">
+    <form onSubmit={(e) => void handleSubmit(e)} className="grid gap-6 md:grid-cols-2">
       {/* Editor column */}
       <div className="space-y-6">
         <div className="rounded border border-[rgba(255,255,255,0.07)] bg-[#1A2733] p-4">
@@ -190,7 +199,7 @@ export default function EmailTemplateForm({ initialValues }: { initialValues: Em
       </div>
 
       {/* Live preview column */}
-      <div className="lg:sticky lg:top-6 lg:self-start">
+      <div className="md:sticky md:top-6 md:self-start">
         <div className="overflow-hidden rounded border border-[rgba(255,255,255,0.07)] bg-[#1A2733]">
           <div className="border-b border-[rgba(255,255,255,0.07)] px-4 py-3">
             <p className="text-xs uppercase tracking-widest text-[#94A3B8]">Live preview (sample data)</p>

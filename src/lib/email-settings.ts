@@ -28,6 +28,24 @@ export async function getEmailSettings(): Promise<EmailSettings> {
  * fragments because they involve a variable-length list / conditional content a
  * flat token replacer cannot express.
  */
+/** Format a move date for the customer, in UK time, e.g. "Wednesday, 15 July 2026 at 10:00". */
+function formatMoveDate(d: Date): string {
+  const datePart = new Intl.DateTimeFormat("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "Europe/London",
+  }).format(d)
+  const timePart = new Intl.DateTimeFormat("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "Europe/London",
+  }).format(d)
+  return `${datePart} at ${timePart}`
+}
+
 export function buildEmailVars(booking: Booking): Record<string, string> {
   const short = booking.id.slice(0, 8).toUpperCase()
   const isDeposit = booking.paymentType === "DEPOSIT"
@@ -62,7 +80,7 @@ export function buildEmailVars(booking: Booking): Record<string, string> {
     deliverPostcode: escapeHtml(booking.deliveryPostcode),
     deliverStairs: String(booking.deliveryStairs),
     stopsList,
-    moveDate: escapeHtml(booking.moveDate.toISOString()),
+    moveDate: escapeHtml(formatMoveDate(booking.moveDate)),
     vanSize: escapeHtml(booking.vanSize),
     helpers: String(booking.helpers),
     paymentLine,
