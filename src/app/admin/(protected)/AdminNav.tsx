@@ -8,6 +8,7 @@ const links = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/bookings", label: "Bookings" },
   { href: "/admin/pricing", label: "Pricing" },
+  { href: "/admin/email", label: "Email Template" },
 ]
 
 export default function AdminNav() {

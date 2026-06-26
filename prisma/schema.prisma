@@ -57,6 +57,13 @@ enum PaymentType {
   DEPOSIT
 }
 
+model EmailSettings {
+  id              String   @id @default("singleton")
+  customerSubject String   @default("Your move is confirmed — {{bookingRef}}")
+  customerBody    String   @db.Text
+  updatedAt       DateTime @updatedAt
+}
+
 model PricingSettings {
   id            String   @id @default("singleton")
   companyName   String   @default("Man and Van")
